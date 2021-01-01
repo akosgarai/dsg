@@ -7,7 +7,7 @@ SITE_NAME="composer-site.com"
 
 install_php_deps:
 	@echo "Installing the dependencies for php ${PHP_VER}"
-	${SUDO} apt-get install php${PHP_VER} php${PHP_VER}-cli php${PHP_VER}-fpm php${PHP_VER}-mysql php${PHP_VER}-json php${PHP_VER}-opcache php${PHP_VER}-mbstring php${PHP_VER}-xml php${PHP_VER}-gd php${PHP_VER}-curl
+	${SUDO} apt-get install php${PHP_VER} php${PHP_VER}-cli php${PHP_VER}-fpm php${PHP_VER}-mysql php${PHP_VER}-json php${PHP_VER}-opcache php${PHP_VER}-mbstring php${PHP_VER}-xml php${PHP_VER}-gd php${PHP_VER}-curl php${PHP_VER}-intl
 
 install_mysql:
 	@echo "Installing mysql"
@@ -34,8 +34,16 @@ install_composer:
 	curl -sS https://getcomposer.org/installer -o composer-setup.php && sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer && rm composer-setup.php
 
 create_composer_project:
-	composer create-project drupal/recommended-project "${SITE_NAME}"
+	composer create-project drupal/recommended-project:8.x "${SITE_NAME}"
 
 install_drupal_with_commandline:
-	cd "${SITE_NAME}" && composer require drush/drush && drush site:install
+	cd "${SITE_NAME}" && composer require drush/drush && ./vendor/drush/drush/drush site:install
+
+install_civicrm_with_commandline:
+	cd "${SITE_NAME}" && \
+		composer config extra.enable-patching true && \
+		composer require civicrm/civicrm-asset-plugin:'~1.1' && \
+		composer require -W civicrm/civicrm-core:'~5.29' && \
+		composer require civicrm/civicrm-packages:'~5.29' && \
+		composer require civicrm/civicrm-drupal-8:'5.29'
 
