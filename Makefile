@@ -4,6 +4,7 @@ DB_NAME=drupal
 DB_USER="drupaluser@localhost"
 DB_PW="Drup4l.Us5r"
 SITE_NAME="composer-site.com"
+TARGET_DIR="/var/www/html"
 
 install_php_deps:
 	@echo "Installing the dependencies for php ${PHP_VER}"
@@ -47,3 +48,9 @@ install_civicrm_with_commandline:
 		composer require civicrm/civicrm-packages:'~5.29' && \
 		composer require civicrm/civicrm-drupal-8:'5.29'
 
+copy_application_to_target:
+	${SUDO} cp -R "${SITE_NAME}" "${TARGET_DIR}/"
+	${SUDO} chown -R www-data: "${TARGET_DIR}/${SITE_NAME}"
+
+create_apache_config:
+	echo $( eval cat apache.conf.template) >> config.template
