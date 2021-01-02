@@ -5,6 +5,7 @@ DB_USER="drupaluser@localhost"
 DB_PW="Drup4l.Us5r"
 SITE_NAME="composer-site.com"
 TARGET_DIR="/var/www/html"
+APACHE_CONF_DIR="/etc/apache2/sites-available"
 
 install_php_deps:
 	@echo "Installing the dependencies for php ${PHP_VER}"
@@ -53,4 +54,13 @@ copy_application_to_target:
 	${SUDO} chown -R www-data: "${TARGET_DIR}/${SITE_NAME}"
 
 create_apache_config:
-	echo $( eval cat apache.conf.template) >> config.template
+	# generate config file from template
+	cat apache.conf.template | sed "s|%{SITE_NAME}|${SITE_NAME}|" > "${SITE_NAME}.conf"
+	# move generated file to apache conf dir.
+	sudo mv "${SITE_NAME}.conf" "${APACHE_CONF_DIR}/${SITE_NAME}.conf"
+	# setup user / group for the generated file
+	sudo chown root:root "${APACHE_CONF_DIR}/${SITE_NAME}.conf"
+	# simlink the config
+	if [ ! -e ${APACHE_CONF_DIR}/../sites-enabled/${SITE_NAME}.conf ]; then sudo ln -s ${APACHE_CONF_DIR}/${SITE_NAME}.conf ${APACHE_CONF_DIR}/../sites-enabled/${SITE_NAME}.conf; fi
+	# restart apache service
+	sudo systemctl restart apache2.service
