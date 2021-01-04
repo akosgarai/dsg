@@ -38,6 +38,9 @@ install_composer:
 create_composer_project:
 	composer create-project drupal/recommended-project:8.x "${SITE_NAME}"
 
+install_custom_admin_theme:
+	cd "${SITE_NAME}" && composer require 'drupal/gin:^3.0' && ./vendor/drush/drush/drush theme set admin gin
+
 install_drupal_with_commandline:
 	cd "${SITE_NAME}" && composer require drush/drush && ./vendor/drush/drush/drush site:install
 

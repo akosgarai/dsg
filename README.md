@@ -23,5 +23,8 @@ First of all, we need to have the expected php version and extensions, mysql dat
 - The database is deleted and reinitialized with the `make create_database` target.
 - Composer could be installed with the `make install_composer` target.
 - We need to create an empty composer project with the `make create_composer_project` make target. The name of the new directory is the value of the `SITE_NAME` env.
-- Install the drupal site with drush cli tool. Composer can require drush. It can be done with `make install_drupal_with_commandline` command.
+- Install the drupal site with drush cli tool. Composer can require drush. It can be done with `make install_drupal_with_commandline` command. (it generates the first user: Installation complete.  User name: admin  User password: CeLiWzmxWb)
+- Optional step: install custom theme (gin) as administration theme with `make install_custom_admin_theme` comand.
 - Install the civicrm with composer with the `make install_civicrm_with_commandline` command.
+- Copy application under the www directory with `make copy_application_to_target` command.
+- Setup apache config with a newly generated apache config file with the `make create_apache_config` command.
