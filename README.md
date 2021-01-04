@@ -16,15 +16,27 @@ A CiviCRM mysql adatbázist követel meg, úgyhogy ezt a csomagot is telepíteni
 
 ## Installation steps - local install.
 
-First of all, we need to have the expected php version and extensions, mysql database client, with user and database.
-- Run the `make install_deps` for installing the necessary packages with apt-get.
-- After this step, run the `make install_apps` for starting and enabling the mysql daemon and running the secure install script.
-- For creating the user for our database `make create_db_user` make target is provided.
-- The database is deleted and reinitialized with the `make create_database` target.
-- Composer could be installed with the `make install_composer` target.
-- We need to create an empty composer project with the `make create_composer_project` make target. The name of the new directory is the value of the `SITE_NAME` env.
-- Install the drupal site with drush cli tool. Composer can require drush. It can be done with `make install_drupal_with_commandline` command. (it generates the first user: Installation complete.  User name: admin  User password: CeLiWzmxWb)
+First of all we have to install the system dependencies with the `make environment_dependencies` target. It wraps the following steps:
+
+- `make install_deps` for installing the necessary packages with apt-get.
+- `make install_apps` for starting and enabling the mysql daemon and running the secure install script.
+- `make create_db_user` for creating the user for our database.
+- `make install_composer` to install the composer application.
+
+The next step is the build process, and the `make build` target is given for this. It does the followings:
+
+- `make create_database` for the database initialization.
+- `make create_composer_project` for creating an empty composer project. The name of the new directory is the value of the `SITE_NAME` env.
+- `make install_drupal_with_commandline` for installing the drupal site with drush cli tool. Composer can require drush. (it generates the first user: Installation complete.  User name: admin  User password: h3QDB7aBUL)
+- `make install_civicrm_with_commandline` for installing the civicrm with composer.
+- `make copy_application_to_target` copy application under the www directory.
+- `make create_apache_config` setup apache with a newly generated apache config file.
+
+Install a custom theme, and sets it as administration theme. It seems buggy.
 - Optional step: install custom theme (gin) as administration theme with `make install_custom_admin_theme` comand.
-- Install the civicrm with composer with the `make install_civicrm_with_commandline` command.
-- Copy application under the www directory with `make copy_application_to_target` command.
-- Setup apache config with a newly generated apache config file with the `make create_apache_config` command.
+
+After the first installation, where the system deps. are installed, we can skip a couple of steps from the build process. The `make rebuild` target wraps the necessary steps.
+
+## Uninstall - local machine.
+
+Just run the `make cleanup_generated_project` command. It deletes the stuff from the www directory, from the current directory, and also removes the apache config.

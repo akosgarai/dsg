@@ -33,7 +33,10 @@ create_database:
 	mysql -u root -p --execute="DROP DATABASE ${DB_NAME}; CREATE DATABASE ${DB_NAME}; GRANT ALL ON ${DB_NAME}.* TO ${DB_USER}; flush privileges;"
 
 install_composer:
-	curl -sS https://getcomposer.org/installer -o composer-setup.php && sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer && rm composer-setup.php
+	curl -sS https://getcomposer.org/installer -o composer-setup.php && ${SUDO} php composer-setup.php --install-dir=/usr/local/bin --filename=composer && rm composer-setup.php
+
+# this target is for installing the system dependencies, like libs, db, apps.
+environment_dependencies: install_deps install_apps create_db_user install_composer
 
 create_composer_project:
 	composer create-project drupal/recommended-project:8.x "${SITE_NAME}"
@@ -62,21 +65,27 @@ create_apache_config:
 	# generate config file from template
 	cat apache.conf.template | sed "s|%{SITE_NAME}|${SITE_NAME}|" > "${SITE_NAME}.conf"
 	# move generated file to apache conf dir.
-	sudo mv "${SITE_NAME}.conf" "${APACHE_CONF_DIR}/${SITE_NAME}.conf"
+	${SUDO} mv "${SITE_NAME}.conf" "${APACHE_CONF_DIR}/${SITE_NAME}.conf"
 	# setup user / group for the generated file
-	sudo chown root:root "${APACHE_CONF_DIR}/${SITE_NAME}.conf"
+	${SUDO} chown root:root "${APACHE_CONF_DIR}/${SITE_NAME}.conf"
 	# simlink the config
-	if [ ! -e ${APACHE_CONF_DIR}/../sites-enabled/${SITE_NAME}.conf ]; then sudo ln -s ${APACHE_CONF_DIR}/${SITE_NAME}.conf ${APACHE_CONF_DIR}/../sites-enabled/${SITE_NAME}.conf; fi
+	if [ ! -e ${APACHE_CONF_DIR}/../sites-enabled/${SITE_NAME}.conf ]; then ${SUDO} ln -s ${APACHE_CONF_DIR}/${SITE_NAME}.conf ${APACHE_CONF_DIR}/../sites-enabled/${SITE_NAME}.conf; fi
 	# restart apache service
-	sudo systemctl restart apache2.service
+	${SUDO} systemctl restart apache2.service
+
+# this is the build process. db init, composer project from scratch, drupal install, civicrm install, apache config.
+build: create_database create_composer_project install_drupal_with_commandline install_civicrm_with_commandline copy_application_to_target create_apache_config
 
 cleanup_generated_project:
 	# delete from www dir
 	${SUDO} rm -rf "${TARGET_DIR}/${SITE_NAME}"
 	# delete from current directory
-	rm -rf "${SITE_NAME}"
+	${SUDO} rm -rf "${SITE_NAME}"
 	# delete apache config file
 	${SUDO} rm "${APACHE_CONF_DIR}/../sites-enabled/${SITE_NAME}.conf"
 	${SUDO} rm "${APACHE_CONF_DIR}/${SITE_NAME}.conf"
 	# restart apache
 	${SUDO} systemctl restart apache2.service
+
+# this target could be used to drop everything and build a brand new application.
+rebuild: cleanup_generated_project create_database create_composer_project install_drupal_with_commandline install_civicrm_with_commandline copy_application_to_target create_apache_config
