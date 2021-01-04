@@ -39,7 +39,9 @@ create_composer_project:
 	composer create-project drupal/recommended-project:8.x "${SITE_NAME}"
 
 install_custom_admin_theme:
-	cd "${SITE_NAME}" && composer require 'drupal/gin:^3.0' && ./vendor/drush/drush/drush theme set admin gin
+	cd "${SITE_NAME}" && composer require 'drupal/gin:^3.0' && \
+		./vendor/drush/drush/drush theme:enable gin && \
+		./vendor/drush/drush/drush config-set system.theme admin gin
 
 install_drupal_with_commandline:
 	cd "${SITE_NAME}" && composer require drush/drush && ./vendor/drush/drush/drush site:install
@@ -67,3 +69,14 @@ create_apache_config:
 	if [ ! -e ${APACHE_CONF_DIR}/../sites-enabled/${SITE_NAME}.conf ]; then sudo ln -s ${APACHE_CONF_DIR}/${SITE_NAME}.conf ${APACHE_CONF_DIR}/../sites-enabled/${SITE_NAME}.conf; fi
 	# restart apache service
 	sudo systemctl restart apache2.service
+
+cleanup_generated_project:
+	# delete from www dir
+	${SUDO} rm -rf "${TARGET_DIR}/${SITE_NAME}"
+	# delete from current directory
+	rm -rf "${SITE_NAME}"
+	# delete apache config file
+	${SUDO} rm "${APACHE_CONF_DIR}/../sites-enabled/${SITE_NAME}.conf"
+	${SUDO} rm "${APACHE_CONF_DIR}/${SITE_NAME}.conf"
+	# restart apache
+	${SUDO} systemctl restart apache2.service
