@@ -4,6 +4,7 @@ DB_NAME=drupal
 DB_USER="drupaluser@localhost"
 DB_PW="Drup4l.Us5r"
 SITE_NAME="composer-site.com"
+SITE_SLOGAN="This site is build with cli tools."
 TARGET_DIR="/var/www/html"
 APACHE_CONF_DIR="/etc/apache2/sites-available"
 
@@ -47,7 +48,10 @@ install_custom_admin_theme:
 		./vendor/drush/drush/drush config-set system.theme admin gin
 
 install_drupal_with_commandline:
-	cd "${SITE_NAME}" && composer require drush/drush && ./vendor/drush/drush/drush site:install
+	cd "${SITE_NAME}" && composer require drush/drush && \
+		./vendor/drush/drush/drush site:install && \
+		./vendor/drush/drush/drush config-set site name "${SITE_NAME}" && \
+		./vendor/drush/drush/drush config-set site slogan "${SITE_SLOGAN}"
 
 install_civicrm_with_commandline:
 	cd "${SITE_NAME}" && \
