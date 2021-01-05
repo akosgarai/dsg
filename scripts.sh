@@ -87,7 +87,7 @@ function createComposerProject {
 }
 
 # It installs the drush command to the previously created composer project.
-func installDrushCommand {
+function installDrushCommand {
 	local targetDir=$1
 	local projectName=$2
 	echo "Installing drush with composer"
@@ -95,7 +95,7 @@ func installDrushCommand {
 }
 
 # It runs the drush install command in the given composer project.
-func runDrushInstall {
+function runDrushInstall {
 	local targetDir=$1
 	local projectName=$2
 	if ! command -v composer; then
@@ -108,7 +108,7 @@ func runDrushInstall {
 }
 
 # It runs the drush config set command in the given composer project with the given parameters.
-func runDrushConfigSet {
+function runDrushConfigSet {
 	local targetDir=$1
 	local projectName=$2
 	local configName=$3
@@ -137,7 +137,7 @@ function composerRequire {
 	composer require "${composerPackage}"
 }
 # It runs the composer config command in the given composer project with the given parameters.
-func runDrushConfigSet {
+function runDrushConfigSet {
 	local targetDir=$1
 	local projectName=$2
 	local configKey=$3
