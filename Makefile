@@ -55,20 +55,20 @@ install_drupal_with_commandline:
 	@./scripts.sh -a "run-drush-config-set" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
 		--drush-config-name "system.site" \
 		--drush-config-key "slogan" \
-		--drush-config-value "${SITE_SLOGAN}"
+		--drush-config-value '"${SITE_SLOGAN}"'
 
 install_civicrm_with_commandline:
 	@./scripts.sh -a "composer-config" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
 		--composer-config-key "extra.enable-patching" \
 		--composer-config-value "true"
 	@./scripts.sh -a "composer-require" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
-		--composer-project "civicrm/civicrm-asset-plugin:'~1.1'"
+		--composer-project "civicrm/civicrm-asset-plugin:~1.1"
+	@./scripts.sh -a "composer-require-with-deps" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
+		--composer-project "civicrm/civicrm-core:~5.29"
 	@./scripts.sh -a "composer-require" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
-		--composer-project "-W civicrm/civicrm-core:'~5.29'"
+		--composer-project "civicrm/civicrm-packages:~5.29"
 	@./scripts.sh -a "composer-require" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
-		--composer-project "civicrm/civicrm-packages:'~5.29'"
-	@./scripts.sh -a "composer-require" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
-		--composer-project "civicrm/civicrm-drupal-8:'5.29'"
+		--composer-project "civicrm/civicrm-drupal-8:5.29"
 
 copy_application_to_target:
 	@./scripts.sh -a "local-deploy" -s --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \

@@ -1,12 +1,5 @@
 #!/bin/bash
 
-# Download composer installer, run it and then deletes the downloaded file.
-#function composerInstall {
-#	curl -sS https://getcomposer.org/installer -o composer-setup.php
-#	${SUDO} php composer-setup.php --install-dir=/usr/local/bin --filename=composer
-#	rm composer-setup.php
-#}
-
 # install PHP and the necessary extensions.
 function installPhp {
 	local version=$1
@@ -46,8 +39,8 @@ function createUserMysql {
 	local rootUserPW=$2
 	local newUserName=$3
 	local newUserPW=$4
-	echo "Creating ${newUserName} user if not exists."
-	mysql -u "${rootUserName}" -p "${rootUserPW}" --execute="CREATE USER IF NOT EXISTS ${newUserName} IDENTIFIED BY '${newUserPW}';"
+	echo "Creating ${newUserName}/${newUserPW} user if not exists."
+	mysql -u "${rootUserName}" "-p${rootUserPW}" --execute="CREATE USER IF NOT EXISTS ${newUserName} IDENTIFIED BY '${newUserPW}';"
 }
 
 # It drops the old database, creates a new one, sets the 
@@ -58,7 +51,7 @@ function createDatabaseMysql {
 	local siteUserName=$3
 	local dbName=$4
 	echo "Creating ${dbName} database and giving all grants to ${siteUserName} user."
-	mysql -u "${rootUserName}" -p "${rootUserPW}" --execute="DROP DATABASE ${dbName}; CREATE DATABASE ${dbName}; GRANT ALL ON ${dbName}.* TO ${siteUserName}; flush privileges;"
+	mysql -u "${rootUserName}" -p"${rootUserPW}" --execute="DROP DATABASE ${dbName}; CREATE DATABASE ${dbName}; GRANT ALL ON ${dbName}.* TO ${siteUserName}; flush privileges;"
 }
 
 # It installs the composer under the /usr/local/bin dir.
@@ -136,8 +129,20 @@ function composerRequire {
 	echo "Require ${composerPackage}."
 	composer require "${composerPackage}"
 }
+function composerRequireWithDependencies {
+	local targetDir=$1
+	local projectName=$2
+	local composerPackage=$3
+	if ! command -v composer; then
+		echo "Composer command is not installed. Use the './scripts.sh -a "install-composer" -s' command to install it." >&2
+		exit 1
+	fi
+	cd "${targetDir}/${projectName}"
+	echo "Require ${composerPackage}."
+	composer require -W "${composerPackage}"
+}
 # It runs the composer config command in the given composer project with the given parameters.
-function runDrushConfigSet {
+function composerConfig {
 	local targetDir=$1
 	local projectName=$2
 	local configKey=$3
@@ -353,7 +358,7 @@ while [ ! $# -eq 0 ]; do
 			SUDO="sudo"
 			;;
 		*)
-			echo "Invalid parameter name $1"
+			echo "Invalid parameter name '$1'"
 			exit 1
 			;;
 	esac
@@ -402,7 +407,7 @@ case "${ACTION}" in
 			echo "You have to set the db user name and db name (--db-user-name and --db-name) to be able to create mysql database."
 			exit 1
 		fi
-		createUserMysql "${DB_ROOT_USER_NAME}" "${DB_ROOT_USER_PW}" "${DB_USER_NAME}" "${DB_NAME}"
+		createDatabaseMysql "${DB_ROOT_USER_NAME}" "${DB_ROOT_USER_PW}" "${DB_USER_NAME}" "${DB_NAME}"
 		;;
 	install-php)
 		if [ "${SUDO}" == "" ]; then
@@ -459,6 +464,16 @@ case "${ACTION}" in
 			echo "You have to set the composer project (--composer-project \"drush/drush\") flag."
 		fi
 		composerRequire "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${COMPOSER_PROJECT}" 
+		;;
+	composer-require-with-deps)
+		if [ "${PROJECT_BASE_PATH}" == "" ] || [ "${PROJECT_NAME}" == "" ]; then
+			echo "You have to set both the project base path (--project-base-path) and the project name (--project-name) flags."
+			exit 1
+		fi
+		if [ "${COMPOSER_PROJECT}" == "" ]; then
+			echo "You have to set the composer project (--composer-project \"drush/drush\") flag."
+		fi
+		composerRequireWithDependencies "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${COMPOSER_PROJECT}" 
 		;;
 	composer-config)
 		if [ "${PROJECT_BASE_PATH}" == "" ] || [ "${PROJECT_NAME}" == "" ]; then
