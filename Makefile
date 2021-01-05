@@ -6,41 +6,39 @@ DB_PW="Drup4l.Us5r"
 SITE_NAME="composer-site.com"
 SITE_SLOGAN="This site is build with cli tools."
 TARGET_DIR="/var/www/html"
-APACHE_CONF_DIR="/etc/apache2/sites-available"
+APACHE_CONF_DIR="/etc/apache2"
+PROJECTS_BASE_PATH=".."
 
 install_php_deps:
-	@echo "Installing the dependencies for php ${PHP_VER}"
-	${SUDO} apt-get install php${PHP_VER} php${PHP_VER}-cli php${PHP_VER}-fpm php${PHP_VER}-mysql php${PHP_VER}-json php${PHP_VER}-opcache php${PHP_VER}-mbstring php${PHP_VER}-xml php${PHP_VER}-gd php${PHP_VER}-curl php${PHP_VER}-intl
+	@./scripts.sh -a "install-php" -s -p "${PHP_VER}"
 
 install_mysql:
-	@echo "Installing mysql"
-	${SUDO} apt-get install mysql-server mysql-client
+	@./scripts.sh -a "install-mysql" -s
 
 start_and_enable_mysql:
-	${SUDO} systemctl start mysql
-	${SUDO} systemctl enable mysql
+	@./scripts.sh -a "configure-mysql" -s
 
 secure_install_mysql:
-	${SUDO} mysql_secure_installation
+	@./scripts.sh -a "secure-install-mysql" -s
 
 install_deps: install_php_deps install_mysql
 
 install_apps: start_and_enable_mysql secure_install_mysql
 
 create_db_user:
-	mysql -u root -p --execute="CREATE USER IF NOT EXISTS ${DB_USER} IDENTIFIED BY '${DB_PW}';"
+	@./scripts.sh -a "create-user-mysql" --root-db-user-pw "${MYSQL_DB_PASS}" --db-user-name "${DB_USER}" --db-user-pw "${DB_PW}"
 
 create_database:
-	mysql -u root -p --execute="DROP DATABASE ${DB_NAME}; CREATE DATABASE ${DB_NAME}; GRANT ALL ON ${DB_NAME}.* TO ${DB_USER}; flush privileges;"
+	@./scripts.sh -a "create-database-mysql" --root-db-user-pw "${MYSQL_DB_PASS}" --db-user-name "${DB_USER}" --db-name "${DB_NAME}"
 
 install_composer:
-	curl -sS https://getcomposer.org/installer -o composer-setup.php && ${SUDO} php composer-setup.php --install-dir=/usr/local/bin --filename=composer && rm composer-setup.php
+	@./scripts.sh -a "install-composer" -s
 
 # this target is for installing the system dependencies, like libs, db, apps.
 environment_dependencies: install_deps install_apps create_db_user install_composer
 
 create_composer_project:
-	composer create-project drupal/recommended-project:8.x "${SITE_NAME}"
+	@./scripts.sh -a "create-composer-project" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}"
 
 install_custom_admin_theme:
 	cd "${SITE_NAME}" && composer require 'drupal/gin:^3.0' && \
@@ -48,48 +46,45 @@ install_custom_admin_theme:
 		./vendor/drush/drush/drush config-set system.theme admin gin
 
 install_drupal_with_commandline:
-	cd "${SITE_NAME}" && composer require drush/drush && \
-		./vendor/drush/drush/drush site:install && \
-		./vendor/drush/drush/drush config-set site name "${SITE_NAME}" && \
-		./vendor/drush/drush/drush config-set site slogan "${SITE_SLOGAN}"
+	@./scripts.sh -a "install-drush" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}"
+	@./scripts.sh -a "run-drush-install" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}"
+	@./scripts.sh -a "run-drush-config-set" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
+		--drush-config-name "system.site" \
+		--drush-config-key "name" \
+		--drush-config-value "${SITE_NAME}"
+	@./scripts.sh -a "run-drush-config-set" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
+		--drush-config-name "system.site" \
+		--drush-config-key "slogan" \
+		--drush-config-value "${SITE_SLOGAN}"
 
 install_civicrm_with_commandline:
-	cd "${SITE_NAME}" && \
-		composer config extra.enable-patching true && \
-		composer require civicrm/civicrm-asset-plugin:'~1.1' && \
-		composer require -W civicrm/civicrm-core:'~5.29' && \
-		composer require civicrm/civicrm-packages:'~5.29' && \
-		composer require civicrm/civicrm-drupal-8:'5.29'
+	@./scripts.sh -a "composer-config" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
+		--composer-config-key "extra.enable-patching" \
+		--composer-config-value "true"
+	@./scripts.sh -a "composer-require" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
+		--composer-project "civicrm/civicrm-asset-plugin:'~1.1'"
+	@./scripts.sh -a "composer-require" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
+		--composer-project "-W civicrm/civicrm-core:'~5.29'"
+	@./scripts.sh -a "composer-require" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
+		--composer-project "civicrm/civicrm-packages:'~5.29'"
+	@./scripts.sh -a "composer-require" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
+		--composer-project "civicrm/civicrm-drupal-8:'5.29'"
 
 copy_application_to_target:
-	${SUDO} cp -R "${SITE_NAME}" "${TARGET_DIR}/"
-	${SUDO} chown -R www-data: "${TARGET_DIR}/${SITE_NAME}"
+	@./scripts.sh -a "local-deploy" -s --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
+		--local-deploy-target "${TARGET_DIR}"
 
 create_apache_config:
-	# generate config file from template
-	cat apache.conf.template | sed "s|%{SITE_NAME}|${SITE_NAME}|" > "${SITE_NAME}.conf"
-	# move generated file to apache conf dir.
-	${SUDO} mv "${SITE_NAME}.conf" "${APACHE_CONF_DIR}/${SITE_NAME}.conf"
-	# setup user / group for the generated file
-	${SUDO} chown root:root "${APACHE_CONF_DIR}/${SITE_NAME}.conf"
-	# simlink the config
-	if [ ! -e ${APACHE_CONF_DIR}/../sites-enabled/${SITE_NAME}.conf ]; then ${SUDO} ln -s ${APACHE_CONF_DIR}/${SITE_NAME}.conf ${APACHE_CONF_DIR}/../sites-enabled/${SITE_NAME}.conf; fi
-	# restart apache service
-	${SUDO} systemctl restart apache2.service
+	@./scripts.sh -a "apache-config" -s --project-name "${SITE_NAME}" \
+		--apache-conf-dir "${APACHE_CONF_DIR}"
 
 # this is the build process. db init, composer project from scratch, drupal install, civicrm install, apache config.
 build: create_database create_composer_project install_drupal_with_commandline install_civicrm_with_commandline copy_application_to_target create_apache_config
 
 cleanup_generated_project:
-	# delete from www dir
-	${SUDO} rm -rf "${TARGET_DIR}/${SITE_NAME}"
-	# delete from current directory
-	${SUDO} rm -rf "${SITE_NAME}"
-	# delete apache config file
-	${SUDO} rm "${APACHE_CONF_DIR}/../sites-enabled/${SITE_NAME}.conf"
-	${SUDO} rm "${APACHE_CONF_DIR}/${SITE_NAME}.conf"
-	# restart apache
-	${SUDO} systemctl restart apache2.service
+	@./scripts.sh -a "remove-project" -s --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
+		--apache-conf-dir "${APACHE_CONF_DIR}"  \
+		--local-deploy-target "${TARGET_DIR}"
 
 # this target could be used to drop everything and build a brand new application.
 rebuild: cleanup_generated_project create_database create_composer_project install_drupal_with_commandline install_civicrm_with_commandline copy_application_to_target create_apache_config

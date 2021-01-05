@@ -27,7 +27,7 @@ The next step is the build process, and the `make build` target is given for thi
 
 - `make create_database` for the database initialization.
 - `make create_composer_project` for creating an empty composer project. The name of the new directory is the value of the `SITE_NAME` env.
-- `make install_drupal_with_commandline` for installing the drupal site with drush cli tool. Composer can require drush. (it generates the first user: Installation complete.  User name: admin  User password: h3QDB7aBUL)
+- `make install_drupal_with_commandline` for installing the drupal site with drush cli tool. Composer can require drush. (it generates the first user: Installation complete.  User name: admin  User password: KzJQ27rJJs)
 - `make install_civicrm_with_commandline` for installing the civicrm with composer.
 - `make copy_application_to_target` copy application under the www directory.
 - `make create_apache_config` setup apache with a newly generated apache config file.
