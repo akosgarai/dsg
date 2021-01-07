@@ -102,10 +102,6 @@ function installDrushCommand {
 function runDrushInstall {
 	local targetDir=$1
 	local projectName=$2
-	if ! command -v composer; then
-		echo "Composer command is not installed. Use the './scripts.sh -a "install-composer" -s' command to install it." >&2
-		exit 1
-	fi
 	cd "${targetDir}/${projectName}"
 	echo "Installing drupal site with drush"
 	./vendor/drush/drush/drush site:install 
