@@ -69,6 +69,9 @@ install_civicrm_with_commandline:
 		--composer-project "civicrm/civicrm-packages:~5.29"
 	@./scripts.sh -a "composer-require" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
 		--composer-project "civicrm/civicrm-drupal-8:5.29"
+	@./scripts.sh -a "install-civicrm-l10n" -s --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" --civicrm-version "5.29.1"
+	@./scripts.sh -a "install-cv" -s
+	@./scripts.sh -a "run-cv-install" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" -s
 
 copy_application_to_target:
 	@./scripts.sh -a "local-deploy" -s --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
@@ -88,3 +91,5 @@ cleanup_generated_project:
 
 # this target could be used to drop everything and build a brand new application.
 rebuild: cleanup_generated_project create_database create_composer_project install_drupal_with_commandline install_civicrm_with_commandline copy_application_to_target create_apache_config
+# this target could be used to drop everything and build a brand new application but without civicrm installation.
+rebuild-only-drupal: cleanup_generated_project create_database create_composer_project install_drupal_with_commandline copy_application_to_target create_apache_config

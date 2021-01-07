@@ -15,6 +15,17 @@ function installMysql {
 	${sudo} apt-get install mysql-server mysql-client
 }
 
+# install cv - civicrm installer.
+function installCv {
+	local sudo=$1
+	if ! command -v cv; then
+		echo "Installing cv - CiviCRM installer"
+		curl -LsS https://download.civicrm.org/cv/cv.phar -o cv
+		${sudo} mv cv /usr/local/bin/
+		${sudo} chmod +x /usr/local/bin/cv
+	fi
+}
+
 # enable mysql service daemon
 function startEnableMysqlDeamon {
 	local sudo=$1
@@ -100,6 +111,24 @@ function runDrushInstall {
 	./vendor/drush/drush/drush site:install 
 }
 
+# It runs the cv install command in the given composer project.
+function runCvInstall {
+	local sudo=$1
+	local targetDir=$2
+	local projectName=$3
+	if ! command -v cv; then
+		echo "cv command is not installed. Use the './scripts.sh -a "install-cv" -s' command to install it." >&2
+		exit 1
+	fi
+	cd "${targetDir}/${projectName}"
+	echo "Making the directory writable"
+	${sudo} chmod +w web/sites/default
+	echo "Installing CiviCRM with cv"
+	cv core:install --cms-base-url="http://localhost/${projectName}/web" --lang="hu_HU"
+	echo "revoke the write permission"
+	${sudo} chmod -w web/sites/default
+}
+
 # It runs the drush config set command in the given composer project with the given parameters.
 function runDrushConfigSet {
 	local targetDir=$1
@@ -162,7 +191,9 @@ function localDeploy {
 	local projectName=$2
 	local wwwdir=$3
 	local sudo=$4
+	echo "Moving project ${targetDir}/${projectName} to ${wwwdir}/"
 	${sudo} cp -R "${targetDir}/${projectName}" "${wwwdir}/"
+	echo "Changing owner ${wwwdir}/${projectName} to www-data."
 	${sudo} chown -R www-data: "${wwwdir}/${projectName}"
 }
 
@@ -171,18 +202,32 @@ function apacheConfig {
 	local sudo=$1
 	local projectName=$2
 	local apachedir=$3
-	# generate config file from template
+	echo "Generate apache config from template."
 	cat apache.conf.template | sed "s|%{SITE_NAME}|${projectName}|" > "${projectName}.conf"
-	# move generated file to apache conf dir.
+	echo "Move the generated ${projectName}.conf file to apache conf ${apachedir}/sites-available/ directory."
 	${sudo} mv "${projectName}.conf" "${apachedir}/sites-available/${projectName}.conf"
-	# setup user / group for the generated file
+	echo "Setup apache config owner to root."
 	${sudo} chown root:root "${apachedir}/sites-available/${projectName}.conf"
-	# simlink the config
+	echo "Simlink to sites-enabled."
 	if [ ! -e ${apachedir}/sites-enabled/${projectName}.conf ]; then 
 		${sudo} ln -s "${apachedir}/sites-available/${projectName}.conf" "${apachedir}/sites-enabled/${projectName}.conf"
 	fi
-	# restart apache service
+	echo "Restarting apache service."
 	${sudo} systemctl restart apache2.service
+}
+
+# It downloads and puts the civicrm l10n files to the right place.
+function installCivicrml10n {
+	local sudo=$1
+	local targetDir=$2
+	local projectName=$3
+	local version=$4
+	curl -LsS "https://download.civicrm.org/civicrm-${version}-l10n.tar.gz" -o "civicrm.${version}-l10n.tar.gz"
+	tar -zxvf "civicrm.${version}-l10n.tar.gz"
+	cp -R civicrm/l10n/ "${targetDir}/${projectName}/vendor/civicrm/civicrm-core/"
+	cp -R civicrm/sql "${targetDir}/${projectName}/vendor/civicrm/civicrm-core/"
+	rm -rf civicrm/
+	rm "civicrm.${version}-l10n.tar.gz"
 }
 
 # It deletes the directories and files connected to the given project.
@@ -223,8 +268,6 @@ DB_USER_PW=""
 DB_NAME="drupal"
 PROJECT_BASE_PATH=""
 PROJECT_NAME=""
-SITE_SLOGAN=""
-SITE_NAME=""
 DRUSH_CONFIG_NAME=""
 DRUSH_CONFIG_KEY=""
 DRUSH_CONFIG_VALUE=""
@@ -233,6 +276,7 @@ COMPOSER_CONFIG_KEY=""
 COMPOSER_CONFIG_VALUE=""
 LOCAL_DEPLOY_TARGET=""
 APACHE_CONF_DIR=""
+CIVICRM_VERSION=""
 
 # manual flag parsing. for the command input.
 while [ ! $# -eq 0 ]; do
@@ -288,21 +332,6 @@ while [ ! $# -eq 0 ]; do
 		--project-name)
 			if [ "$2" ]; then
 				PROJECT_NAME=$2
-				if [ "${SITE_NAME}" == "" ]; then
-					SITE_NAME=${PROJECT_NAME}
-				fi
-				shift
-			fi
-			;;
-		--site-name)
-			if [ "$2" ]; then
-				SITE_NAME=$2
-				shift
-			fi
-			;;
-		--site-slogan)
-			if [ "$2" ]; then
-				SITE_SLOGAN=$2
 				shift
 			fi
 			;;
@@ -354,6 +383,12 @@ while [ ! $# -eq 0 ]; do
 				shift
 			fi
 			;;
+		--civicrm-version)
+			if [ "$2" ]; then
+				CIVICRM_VERSION=$2
+				shift
+			fi
+			;;
 		-s | --sudo)
 			SUDO="sudo"
 			;;
@@ -367,6 +402,13 @@ done
 
 # handle action parameter. If it is invalid, it has to print error message.
 case "${ACTION}" in
+	install-cv)
+		if [ "${SUDO}" == "" ]; then
+			echo "You have to set the sudo (-s or --sudo) to be able to install composer."
+			exit 1
+		fi
+		installCv "${SUDO}"
+		;;
 	install-composer)
 		if [ "${SUDO}" == "" ]; then
 			echo "You have to set the sudo (-s or --sudo) to be able to install composer."
@@ -437,6 +479,17 @@ case "${ACTION}" in
 		fi
 		runDrushInstall "${PROJECT_BASE_PATH}" "${PROJECT_NAME}"
 		;;
+	run-cv-install)
+		if [ "${SUDO}" == "" ]; then
+			echo "You have to set the sudo (-s or --sudo) to be able to run cv install."
+			exit 1
+		fi
+		if [ "${PROJECT_BASE_PATH}" == "" ] || [ "${PROJECT_NAME}" == "" ]; then
+			echo "You have to set both the project base path (--project-base-path) and the project name (--project-name) flags."
+			exit 1
+		fi
+		runCvInstall "${SUDO}" "${PROJECT_BASE_PATH}" "${PROJECT_NAME}"
+		;;
 	run-drush-config-set)
 		if [ "${PROJECT_BASE_PATH}" == "" ] || [ "${PROJECT_NAME}" == "" ]; then
 			echo "You have to set both the project base path (--project-base-path) and the project name (--project-name) flags."
@@ -447,13 +500,6 @@ case "${ACTION}" in
 			exit 1
 		fi
 		runDrushConfigSet "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${DRUSH_CONFIG_NAME}" "${DRUSH_CONFIG_KEY}" "${DRUSH_CONFIG_VALUE}"
-		;;
-	install-drupal-site)
-		if [ "${PROJECT_BASE_PATH}" == "" ] || [ "${PROJECT_NAME}" == "" ]; then
-			echo "You have to set both the project base path (--project-base-path) and the project name (--project-name) flags."
-			exit 1
-		fi
-		installDrupalSite "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${SITE_NAME}" "${SITE_SLOGAN}"
 		;;
 	composer-require)
 		if [ "${PROJECT_BASE_PATH}" == "" ] || [ "${PROJECT_NAME}" == "" ]; then
@@ -531,6 +577,21 @@ case "${ACTION}" in
 			exit 1
 		fi
 		removeProject "${SUDO}" "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${LOCAL_DEPLOY_TARGET}" "${APACHE_CONF_DIR}"
+		;;
+	install-civicrm-l10n)
+		if [ "${SUDO}" == "" ]; then
+			echo "You have to set the sudo (-s or --sudo) to be able to install composer."
+			exit 1
+		fi
+		if [ "${PROJECT_BASE_PATH}" == "" ] || [ "${PROJECT_NAME}" == "" ]; then
+			echo "You have to set both the project base path (--project-base-path) and the project name (--project-name) flags."
+			exit 1
+		fi
+		if [ "${CIVICRM_VERSION}" == "" ]; then
+			echo "You have to set the civicrm version (--civicrm-version) flags."
+			exit 1
+		fi
+		installCivicrml10n "${SUDO}" "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${CIVICRM_VERSION}"
 		;;
 	*)
 		echo "Invalid action name: '${ACTION}'"
