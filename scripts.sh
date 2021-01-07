@@ -136,10 +136,6 @@ function runDrushConfigSet {
 	local configName=$3
 	local configKey=$4
 	local configValue=$5
-	if ! command -v composer; then
-		echo "Composer command is not installed. Use the './scripts.sh -a "install-composer" -s' command to install it." >&2
-		exit 1
-	fi
 	cd "${targetDir}/${projectName}"
 	echo "Setting the ${configName} ${configKey} to ${configValue}"
 	./vendor/drush/drush/drush config-set "${configName}" "${configKey}" "${configValue}"
