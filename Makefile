@@ -34,7 +34,9 @@ build:
 	@./scripts.sh -a "run-drush-install" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
 		--db-name "${DB_NAME}" \
 		--root-db-user-pw "${MYSQL_DB_PASS}" \
-		--db-user-name "${DB_USER}"
+		--db-user-name "${DB_USER}" \
+		--site-admin-user-name "${SITE_ADMIN_NAME}" \
+		--site-admin-password "${SITE_ADMIN_PW}"
 	@./scripts.sh -a "run-drush-config-set" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
 		--drush-config-name "system.site" \
 		--drush-config-key "name" \
@@ -56,7 +58,9 @@ build_with_civicrm:
 	@./scripts.sh -a "run-drush-install" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
 		--db-name "${DB_NAME}" \
 		--root-db-user-pw "${MYSQL_DB_PASS}" \
-		--db-user-name "${DB_USER}"
+		--db-user-name "${DB_USER}" \
+		--site-admin-user-name "${SITE_ADMIN_NAME}" \
+		--site-admin-password "${SITE_ADMIN_PW}"
 	@./scripts.sh -a "run-drush-config-set" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
 		--drush-config-name "system.site" \
 		--drush-config-key "name" \
