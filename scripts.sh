@@ -102,9 +102,12 @@ function installDrushCommand {
 function runDrushInstall {
 	local targetDir=$1
 	local projectName=$2
+	local dbUser=$3
+	local dbPass=$4
+	local dbName=$5
 	cd "${targetDir}/${projectName}"
-	echo "Installing drupal site with drush"
-	./vendor/drush/drush/drush site:install 
+	echo "Installing drupal site with drush, using the db-url flag: --db-url=mysql://${dbUser}:${dbPass}@localhost:3306/${dbName}"
+	./vendor/drush/drush/drush site:install --db-url="mysql://${dbUser}:${dbPass}@localhost:3306/${dbName}"
 }
 
 # It runs the cv install command in the given composer project.
@@ -469,7 +472,11 @@ case "${ACTION}" in
 			echo "You have to set both the project base path (--project-base-path) and the project name (--project-name) flags."
 			exit 1
 		fi
-		runDrushInstall "${PROJECT_BASE_PATH}" "${PROJECT_NAME}"
+		if  [ "${DB_NAME}" == "" ]; then
+			echo "You have to set the db name (--db-name) to be able to run the site installation."
+			exit 1
+		fi
+		runDrushInstall "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${DB_ROOT_USER_NAME}" "${DB_ROOT_USER_PW}" "${DB_NAME}"
 		;;
 	run-cv-install)
 		if [ "${SUDO}" == "" ]; then
