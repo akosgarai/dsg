@@ -32,19 +32,22 @@ The action flag is for changing the action what we want to do. Currently the fol
 - **composer-config** action calls composer config command in the project directory. If the composer application is not installed, it fails.
 
 ```bash
-./scripts.sh -a "composer-config" --project-base-path ".." --project-name "example.com" --composer-config-key "extra.enable-patching" --composer-config-value "true"
+./scripts.sh -a "composer-config" --project-base-path ".." --project-name "example.com" \
+	--composer-config-key "extra.enable-patching" --composer-config-value "true"
 ```
 
 - **composer-require** action calls composer require command in the project directory. If the composer applciation is not installed, it fails.
 
 ```bash
-./scripts.sh -a "composer-require" --project-base-path ".." --project-name "example.com" --composer-project "civicrm/civicrm-asset-plugin:~1.1"
+./scripts.sh -a "composer-require" --project-base-path ".." --project-name "example.com" \
+	--composer-project "civicrm/civicrm-asset-plugin:~1.1"
 ```
 
 - **composer-require-with-deps** action calls composer require -W command in the project directory. If the composer applciation is not installed, it fails.
 
 ```bash
-./scripts.sh -a "composer-require-with-deps" --project-base-path ".." --project-name "example.com" --composer-project "civicrm/civicrm-asset-plugin:~1.1"
+./scripts.sh -a "composer-require-with-deps" --project-base-path ".." --project-name "example.com" \
+	--composer-project "civicrm/civicrm-asset-plugin:~1.1"
 ```
 
 - **configure-mysql** action starts and enables the mysql daemon with systemctl command. The sudo flag has to be set for this command.
@@ -62,19 +65,22 @@ The action flag is for changing the action what we want to do. Currently the fol
 - **create-database-mysql** action drops the database if exists, creates a new one, grants all priv. to the database user and flushes the privileges. The action is done in the name of the given mysql user.
 
 ```bash
-./scripts.sh -a "create-database-mysql" --root-db-user-pw "passwd" --root-db-user-name "root" --db-user-name "drupaluser" --db-name "drupal"
+./scripts.sh -a "create-database-mysql" --root-db-user-pw "passwd" --root-db-user-name "root" \
+	--db-user-name "drupaluser" --db-name "drupal"
 ```
 
 - **create-user-mysql** action creates the db user if not exists and sets its password. The action is done in the name of the given mysql user.
 
 ```bash
-./scripts.sh -a "create-user-mysql" --root-db-user-pw "passwd" --root-db-user-name "root" --db-user-name "drupaluser" --db-user-pw "drupaluserpasswd"
+./scripts.sh -a "create-user-mysql" --root-db-user-pw "passwd" --root-db-user-name "root" \
+	--db-user-name "drupaluser" --db-user-pw "drupaluserpasswd"
 ```
 
 - **install-civicrm-l10n** action downloads the l10n files of the given civicrm version, unpacks it, copies the necessary files to the civicrm-core directory inside the vendor directory of the project, finally it cleans up. The sudo flag has to be set for this command.
 
 ```bash
-./scripts.sh -a "install-civicrm-l10n" -s --project-base-path ".." --project-name "example.com" --civicrm-version "5.29.1"
+./scripts.sh -a "install-civicrm-l10n" -s --project-base-path ".." --project-name "example.com" \
+	--civicrm-version "5.29.1"
 ```
 
 - **install-composer** action downloads the composer installer, installs the composer under the /usr/local/bin directory, then it cleans up. The sudo flag has to be set for this command.
@@ -110,13 +116,15 @@ The action flag is for changing the action what we want to do. Currently the fol
 - **local-deploy** action copies the project application to the www directory and setups the owner of the copied directory. The sudo flag has to be set for this command.
 
 ```bash
-./scripts.sh -a "local-deploy" -s --project-base-path ".." --project-name "example.com" --local-deploy-target "/var/www/html"
+./scripts.sh -a "local-deploy" -s --project-base-path ".." --project-name "example.com" \
+	--local-deploy-target "/var/www/html"
 ```
 
 - **remove-project** action cleans up the project from the www directory, also from the project directory. Then it removes the apache config from the apache directory if it was deployed and restarts the apache services. The sudo flag has to be set for this command.
 
 ```bash
-./scripts.sh -a "remove-project" -s --project-base-path ".." --project-name "example.com" --apache-conf-dir "/etc/apache2"  --local-deploy-target "/var/www/html"
+./scripts.sh -a "remove-project" -s --project-base-path ".." --project-name "example.com" \
+	--apache-conf-dir "/etc/apache2"  --local-deploy-target "/var/www/html"
 ```
 
 - **run-cv-install** action installs the civicrm core module. Unfortunately this action seems to be buggy. After the installation the site is broken. The action changes the permission of the web/sites/default directory in the project directory. It installs the module with the cv application, then it changes back the directory permissions. The action fails if the cv is not installed. The sudo flag has to be set for this command.
@@ -128,7 +136,9 @@ The action flag is for changing the action what we want to do. Currently the fol
 - **run-drush-config-set** action calls drush config-set command in the project directory. It sets the given key in the given config to a given value.
 
 ```bash
-./scripts.sh -a "run-drush-config-set" --project-base-path ".." --project-name "example.com" --drush-config-name "system.site" --drush-config-key "name" --drush-config-value "The example.com site"
+./scripts.sh -a "run-drush-config-set" --project-base-path ".." --project-name "example.com" \
+	--drush-config-name "system.site" --drush-config-key "name" \
+	--drush-config-value "The example.com site"
 ```
 
 - **run-drush-install** action installs the drupal site with the drush tool in the project directory.
