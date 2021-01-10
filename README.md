@@ -211,6 +211,14 @@ This flag manages the target directory of the apache configuration (eg: /etc/apa
 
 This flag manages the version string that we are using for installing the civicrm. The l10n file installation needs this. It is used in the install-civicrm-l10n action. If this flag is not set, the action will fail.
 
+### `--site-admin-user-name`
+
+This flag manages the name of the administrator user that is created during the site installation. It is used in the run-drush-install action. If this flag is not set, the action will fail.
+
+### `--site-admin-password`
+
+This flag manages the password of the administrator user that is created during the site installation. It is used in the run-drush-install action. If this flag is not set, the action will fail.
+
 ## TODO list
 
 - Naming convention for the action names.

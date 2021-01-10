@@ -105,9 +105,11 @@ function runDrushInstall {
 	local dbUser=$3
 	local dbPass=$4
 	local dbName=$5
+	local adminName=$6
+	local adminPW=$7
 	cd "${targetDir}/${projectName}"
 	echo "Installing drupal site with drush, using the db-url flag: --db-url=mysql://${dbUser}:${dbPass}@localhost:3306/${dbName}"
-	./vendor/drush/drush/drush site:install --db-url="mysql://${dbUser}:${dbPass}@localhost:3306/${dbName}"
+	./vendor/drush/drush/drush site:install --db-url="mysql://${dbUser}:${dbPass}@localhost:3306/${dbName}" --account-name="${adminName}" --account-pass="${adminPW}"
 }
 
 # It runs the cv install command in the given composer project.
@@ -272,6 +274,8 @@ COMPOSER_CONFIG_VALUE=""
 LOCAL_DEPLOY_TARGET=""
 APACHE_CONF_DIR=""
 CIVICRM_VERSION=""
+SITE_ADMIN_USER_NAME=""
+SITE_ADMIN_PASSWD=""
 
 # manual flag parsing. for the command input.
 while [ ! $# -eq 0 ]; do
@@ -384,6 +388,18 @@ while [ ! $# -eq 0 ]; do
 				shift
 			fi
 			;;
+		--site-admin-user-name)
+			if [ "$2" ]; then
+				SITE_ADMIN_USER_NAME=$2
+				shift
+			fi
+			;;
+		--site-admin-password)
+			if [ "$2" ]; then
+				SITE_ADMIN_PASSWD=$2
+				shift
+			fi
+			;;
 		-s | --sudo)
 			SUDO="sudo"
 			;;
@@ -476,7 +492,11 @@ case "${ACTION}" in
 			echo "You have to set the db name (--db-name) to be able to run the site installation."
 			exit 1
 		fi
-		runDrushInstall "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${DB_ROOT_USER_NAME}" "${DB_ROOT_USER_PW}" "${DB_NAME}"
+		if [ "${SITE_ADMIN_USER_NAME}" == "" ] || [ "${SITE_ADMIN_PASSWD}" == "" ]; then
+			echo "You have to set both the administrator user name (--site-admin-user-name) and the administrator user password (--site-admin-password) flags."
+			exit 1
+		fi
+		runDrushInstall "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${DB_ROOT_USER_NAME}" "${DB_ROOT_USER_PW}" "${DB_NAME}" "${SITE_ADMIN_USER_NAME}" "${SITE_ADMIN_PASSWD}"
 		;;
 	run-cv-install)
 		if [ "${SUDO}" == "" ]; then
