@@ -277,15 +277,17 @@ CIVICRM_VERSION=""
 SITE_ADMIN_USER_NAME=""
 SITE_ADMIN_PASSWD=""
 
+# Get the name of the action.
+if [ ! $# -eq 0 ]; then
+    ACTION=$1
+    shift
+else
+    echo "Missing action name."
+    exit 1
+fi
 # manual flag parsing. for the command input.
 while [ ! $# -eq 0 ]; do
 	case "$1" in
-		-a | --action)
-			if [ "$2" ]; then
-				ACTION=$2
-				shift
-			fi
-			;;
 		-p | --php)
 			if [ "$2" ]; then
 				PHP_VER=$2

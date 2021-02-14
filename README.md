@@ -13,130 +13,126 @@ Due to the postgresql database is not supported by the civicrm, the mysql packag
 
 ## DSG - Drupal Site Generator CLI
 
-This tool is implemented in the `scripts.sh` file. The tool management is flag based. It handles the following flags:
+This tool is implemented in the `scripts.sh` file. The tool management is action and flag based. It handles the following actins and flags:
 
-### `--sudo` or `-s`
+### Actions
 
-It enables the sudo mode, that we need for some commands.
-
-### `--action` or `-a`
-
-The action flag is for changing the action what we want to do. Currently the following actions are supported:
+For selecting the action what we want to do. Currently the following actions are supported:
 
 - **apache-config** action creates the necessary configuration file, based on the template (apache.conf.template). Then it copies it to the apache directory, enables the config, restarts apache. The sudo flag has to be set for this command.
 
 ```bash
-./scripts.sh -a "apache-config" -s --project-name "example.com" --apache-conf-dir "/etc/apache2"
+./scripts.sh "apache-config" -s --project-name "example.com" --apache-conf-dir "/etc/apache2"
 ```
 
 - **composer-config** action calls composer config command in the project directory. If the composer application is not installed, it fails.
 
 ```bash
-./scripts.sh -a "composer-config" --project-base-path ".." --project-name "example.com" \
+./scripts.sh "composer-config" --project-base-path ".." --project-name "example.com" \
 	--composer-config-key "extra.enable-patching" --composer-config-value "true"
 ```
 
 - **composer-require** action calls composer require command in the project directory. If the composer applciation is not installed, it fails.
 
 ```bash
-./scripts.sh -a "composer-require" --project-base-path ".." --project-name "example.com" \
+./scripts.sh "composer-require" --project-base-path ".." --project-name "example.com" \
 	--composer-project "civicrm/civicrm-asset-plugin:~1.1"
 ```
 
 - **composer-require-with-deps** action calls composer require -W command in the project directory. If the composer applciation is not installed, it fails.
 
 ```bash
-./scripts.sh -a "composer-require-with-deps" --project-base-path ".." --project-name "example.com" \
+./scripts.sh "composer-require-with-deps" --project-base-path ".." --project-name "example.com" \
 	--composer-project "civicrm/civicrm-asset-plugin:~1.1"
 ```
 
 - **configure-mysql** action starts and enables the mysql daemon with systemctl command. The sudo flag has to be set for this command.
 
 ```bash
-./scripts.sh -a "configure-mysql" -s
+./scripts.sh "configure-mysql" -s
 ```
 
 - **create-composer-project** action calls composer create-project command with drupal/recommended-project:8.x package to the directory.
 
 ```bash
-./scripts.sh -a "create-composer-project" --project-base-path ".." --project-name "example.com"
+./scripts.sh "create-composer-project" --project-base-path ".." --project-name "example.com"
 ```
 
 - **create-database-mysql** action drops the database if exists, creates a new one, grants all priv. to the database user and flushes the privileges. The action is done in the name of the given mysql user.
 
 ```bash
-./scripts.sh -a "create-database-mysql" --root-db-user-pw "passwd" --root-db-user-name "root" \
+./scripts.sh "create-database-mysql" --root-db-user-pw "passwd" --root-db-user-name "root" \
 	--db-user-name "drupaluser" --db-name "drupal"
 ```
 
 - **create-user-mysql** action creates the db user if not exists and sets its password. The action is done in the name of the given mysql user.
 
 ```bash
-./scripts.sh -a "create-user-mysql" --root-db-user-pw "passwd" --root-db-user-name "root" \
+./scripts.sh "create-user-mysql" --root-db-user-pw "passwd" --root-db-user-name "root" \
 	--db-user-name "drupaluser" --db-user-pw "drupaluserpasswd"
 ```
 
 - **install-civicrm-l10n** action downloads the l10n files of the given civicrm version, unpacks it, copies the necessary files to the civicrm-core directory inside the vendor directory of the project, finally it cleans up. The sudo flag has to be set for this command.
 
 ```bash
-./scripts.sh -a "install-civicrm-l10n" -s --project-base-path ".." --project-name "example.com" \
+./scripts.sh "install-civicrm-l10n" -s --project-base-path ".." --project-name "example.com" \
 	--civicrm-version "5.29.1"
 ```
 
 - **install-composer** action downloads the composer installer, installs the composer under the /usr/local/bin directory, then it cleans up. The sudo flag has to be set for this command.
 
 ```bash
-./scripts.sh -a "install-composer" -s
+./scripts.sh "install-composer" -s
 ```
 
 - **install-cv** action downloads the cv (civicrm cli) application, moves it under /usr/local/bin/ directory, and gives execute permission to it. The sudo flag has to be set for this command.
 
 ```bash
-./scripts.sh -a "install-cv" -s
+./scripts.sh "install-cv" -s
 ```
 
 - **install-drush** action requires the drush package with composer. Under the hood, it calls composer-require action with drush/drush as package.
 
 ```bash
-./scripts.sh -a "install-drush" --project-base-path ".." --project-name "example.com"
+./scripts.sh "install-drush" --project-base-path ".." --project-name "example.com"
 ```
 
 - **install-mysql** action installs the mysql packages (mysql-server, mysql-client) with apt-get command. The sudo flag has to be set for this command.
 
 ```bash
-./scripts.sh -a "install-mysql" -s
+./scripts.sh "install-mysql" -s
 ```
 
 - **install-php** action install the php and the necessary extensions with apt-get command. The sudo flag has to be set for this command.
 
 ```bash
-./scripts.sh -a "install-php" -s -p "7.3"
+./scripts.sh "install-php" -s -p "7.3"
 ```
 
 - **local-deploy** action copies the project application to the www directory and setups the owner of the copied directory. The sudo flag has to be set for this command.
 
 ```bash
-./scripts.sh -a "local-deploy" -s --project-base-path ".." --project-name "example.com" \
+./scripts.sh "local-deploy" -s --project-base-path ".." --project-name "example.com" \
 	--local-deploy-target "/var/www/html"
 ```
 
 - **remove-project** action cleans up the project from the www directory, also from the project directory. Then it removes the apache config from the apache directory if it was deployed and restarts the apache services. The sudo flag has to be set for this command.
 
 ```bash
-./scripts.sh -a "remove-project" -s --project-base-path ".." --project-name "example.com" \
+./scripts.sh "remove-project" -s --project-base-path ".." --project-name "example.com" \
 	--apache-conf-dir "/etc/apache2"  --local-deploy-target "/var/www/html"
 ```
 
 - **run-cv-install** action installs the civicrm core module. Unfortunately this action seems to be buggy. After the installation the site is broken. The action changes the permission of the web/sites/default directory in the project directory. It installs the module with the cv application, then it changes back the directory permissions. The action fails if the cv is not installed. The sudo flag has to be set for this command.
 
 ```bash
-./scripts.sh -a "run-cv-install" --project-base-path ".." --project-name "example.com" -s
+./scripts.sh "run-cv-install" --project-base-path ".." --project-name "example.com" -s
 ```
 
 - **run-drush-config-set** action calls drush config-set command in the project directory. It sets the given key in the given config to a given value.
 
 ```bash
-./scripts.sh -a "run-drush-config-set" --project-base-path ".." --project-name "example.com" \
+./scripts.sh "run-drush-config-set" --project-base-path ".." --project-name "example.com" \
 	--drush-config-name "system.site" --drush-config-key "name" \
 	--drush-config-value "The example.com site"
 ```
@@ -144,14 +140,18 @@ The action flag is for changing the action what we want to do. Currently the fol
 - **run-drush-install** action installs the drupal site with the drush tool in the project directory.
 
 ```bash
-./scripts.sh -a "run-drush-install" --project-base-path ".." --project-name "example.com"
+./scripts.sh "run-drush-install" --project-base-path ".." --project-name "example.com"
 ```
 
 - **secure-install-mysql** action runs the mysql\_secure\_installation command. The sudo flag has to be set for this command.
 
 ```bash
-./scripts.sh -a "secure-install-mysql" -s
+./scripts.sh "secure-install-mysql" -s
 ```
+
+### `--sudo` or `-s`
+
+It enables the sudo mode, that we need for some commands.
 
 ### `--php` or `-p`
 
