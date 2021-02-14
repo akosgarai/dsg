@@ -5,7 +5,7 @@ function installPhp {
 	local version=$1
 	local sudo=$2
 	echo "Installing the dependencies for php ${version}"
-	${sudo} apt-get install php${version} php${version}-cli php${version}-fpm php${version}-mysql php${version}-json php${version}-opcache php${version}-mbstring php${version}-xml php${version}-gd php${version}-curl php${version}-intl
+	${sudo} apt-get install php"${version}" php"${version}"-cli php"${version}"-fpm php"${version}"-mysql php"${version}"-json php"${version}"-opcache php"${version}"-mbstring php"${version}"-xml php"${version}"-gd php"${version}"-curl php"${version}"-intl
 }
 
 # install mysql.
@@ -83,10 +83,10 @@ function createComposerProject {
 	local targetDir=$1
 	local projectName=$2
 	if ! command -v composer; then
-		echo "Composer command is not installed. Use the './scripts.sh -a "install-composer" -s' command to install it." >&2
+		echo "Composer command is not installed. Use the './scripts.sh -a \"install-composer\" -s' command to install it." >&2
 		exit 1
 	fi
-	cd "${targetDir}"
+	cd "${targetDir}" || exit
 	composer create-project drupal/recommended-project:8.x "${projectName}"
 }
 
@@ -107,7 +107,7 @@ function runDrushInstall {
 	local dbName=$5
 	local adminName=$6
 	local adminPW=$7
-	cd "${targetDir}/${projectName}"
+	cd "${targetDir}/${projectName}" || exit
 	echo "Installing drupal site with drush, using the db-url flag: --db-url=mysql://${dbUser}:${dbPass}@localhost:3306/${dbName}"
 	./vendor/drush/drush/drush site:install --db-url="mysql://${dbUser}:${dbPass}@localhost:3306/${dbName}" --account-name="${adminName}" --account-pass="${adminPW}"
 }
@@ -148,10 +148,10 @@ function composerRequire {
 	local projectName=$2
 	local composerPackage=$3
 	if ! command -v composer; then
-		echo "Composer command is not installed. Use the './scripts.sh -a "install-composer" -s' command to install it." >&2
+		echo "Composer command is not installed. Use the './scripts.sh -a \"install-composer\" -s' command to install it." >&2
 		exit 1
 	fi
-	cd "${targetDir}/${projectName}"
+	cd "${targetDir}/${projectName}" || exit
 	echo "Require ${composerPackage}."
 	composer require "${composerPackage}"
 }
@@ -160,10 +160,10 @@ function composerRequireWithDependencies {
 	local projectName=$2
 	local composerPackage=$3
 	if ! command -v composer; then
-		echo "Composer command is not installed. Use the './scripts.sh -a "install-composer" -s' command to install it." >&2
+		echo "Composer command is not installed. Use the './scripts.sh -a \"install-composer\" -s' command to install it." >&2
 		exit 1
 	fi
-	cd "${targetDir}/${projectName}"
+	cd "${targetDir}/${projectName}" || exit
 	echo "Require ${composerPackage}."
 	composer require -W "${composerPackage}"
 }
@@ -174,10 +174,10 @@ function composerConfig {
 	local configKey=$3
 	local configValue=$4
 	if ! command -v composer; then
-		echo "Composer command is not installed. Use the './scripts.sh -a "install-composer" -s' command to install it." >&2
+		echo "Composer command is not installed. Use the './scripts.sh -a \"install-composer\" -s' command to install it." >&2
 		exit 1
 	fi
-	cd "${targetDir}/${projectName}"
+	cd "${targetDir}/${projectName}" || exit
 	echo "Setting the composer ${configKey} to ${configValue}"
 	composer config "${configKey}" "${configValue}"
 }
@@ -200,13 +200,13 @@ function apacheConfig {
 	local projectName=$2
 	local apachedir=$3
 	echo "Generate apache config from template."
-	cat apache.conf.template | sed "s|%{SITE_NAME}|${projectName}|" > "${projectName}.conf"
+	sed "s|%{SITE_NAME}|${projectName}|" apache.conf.template > "${projectName}.conf"
 	echo "Move the generated ${projectName}.conf file to apache conf ${apachedir}/sites-available/ directory."
 	${sudo} mv "${projectName}.conf" "${apachedir}/sites-available/${projectName}.conf"
 	echo "Setup apache config owner to root."
 	${sudo} chown root:root "${apachedir}/sites-available/${projectName}.conf"
 	echo "Simlink to sites-enabled."
-	if [ ! -e ${apachedir}/sites-enabled/${projectName}.conf ]; then 
+	if [ ! -e "${apachedir}/sites-enabled/${projectName}.conf" ]; then
 		${sudo} ln -s "${apachedir}/sites-available/${projectName}.conf" "${apachedir}/sites-enabled/${projectName}.conf"
 	fi
 	echo "Restarting apache service."
