@@ -98,3 +98,6 @@ rebuild: cleanup_generated_project build
 
 # this target could be used to drop everything and build a brand new application but without civicrm installation.
 rebuild_with_civicrm: cleanup_generated_project build-with-civicrm
+
+# this target could be used for building an app in ci environment.
+ci_build: environment_dependencies build
