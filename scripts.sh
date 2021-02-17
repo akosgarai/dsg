@@ -82,20 +82,22 @@ function installComposer {
 function createComposerProject {
 	local targetDir=$1
 	local projectName=$2
-	if ! command -v composer; then
+	local composerApp=$3
+	if ! command -v "${composerApp}"; then
 		echo "Composer command is not installed. Use the './scripts.sh -a \"install-composer\" -s' command to install it." >&2
 		exit 1
 	fi
 	cd "${targetDir}" || exit
-	composer create-project drupal/recommended-project:8.x "${projectName}"
+	"${composerApp}" create-project drupal/recommended-project:8.x "${projectName}" --no-interaction --no-progress
 }
 
 # It installs the drush command to the previously created composer project.
 function installDrushCommand {
 	local targetDir=$1
 	local projectName=$2
+	local composerApp=$3
 	echo "Installing drush with composer"
-	composerRequire "${targetDir}" "${projectName}" "drush/drush"
+	composerRequire "${targetDir}" "${projectName}" "drush/drush" "${composerApp}"
 }
 
 # It runs the drush install command in the given composer project.
@@ -107,9 +109,11 @@ function runDrushInstall {
 	local dbName=$5
 	local adminName=$6
 	local adminPW=$7
+	local dbHost=$8
+	local dbPort=$9
 	cd "${targetDir}/${projectName}" || exit
-	echo "Installing drupal site with drush, using the db-url flag: --db-url=mysql://${dbUser}:${dbPass}@localhost:3306/${dbName}"
-	./vendor/drush/drush/drush site:install --db-url="mysql://${dbUser}:${dbPass}@localhost:3306/${dbName}" --account-name="${adminName}" --account-pass="${adminPW}"
+	echo "Installing drupal site with drush, using the db-url flag: --db-url=mysql://${dbUser}:${dbPass}@${dbHost}:${dbPort}/${dbName}"
+	./vendor/drush/drush/drush site:install --db-url="mysql://${dbUser}:${dbPass}@${dbHost}:${dbPort}/${dbName}" --account-name="${adminName}" --account-pass="${adminPW}" --yes
 }
 
 # It runs the cv install command in the given composer project.
@@ -147,25 +151,39 @@ function composerRequire {
 	local targetDir=$1
 	local projectName=$2
 	local composerPackage=$3
-	if ! command -v composer; then
+	local composerApp=$4
+	if ! command -v "${composerApp}"; then
 		echo "Composer command is not installed. Use the './scripts.sh -a \"install-composer\" -s' command to install it." >&2
 		exit 1
 	fi
 	cd "${targetDir}/${projectName}" || exit
 	echo "Require ${composerPackage}."
-	composer require "${composerPackage}"
+	"${composerApp}" require --no-progress "${composerPackage}"
+}
+# It runs composer require command for a workaround.
+function composerRequireSymfony {
+	local targetDir=$1
+	local projectName=$2
+	local composerApp=$3
+	if ! command -v "${composerApp}"; then
+		echo "Composer command is not installed. Use the './scripts.sh -a \"install-composer\" -s' command to install it." >&2
+		exit 1
+	fi
+	cd "${targetDir}/${projectName}" || exit
+	"${composerApp}" require symfony/finder:"5.2.3 as 4.4.18"
 }
 function composerRequireWithDependencies {
 	local targetDir=$1
 	local projectName=$2
 	local composerPackage=$3
-	if ! command -v composer; then
+	local composerApp=$4
+	if ! command -v "${composerApp}"; then
 		echo "Composer command is not installed. Use the './scripts.sh -a \"install-composer\" -s' command to install it." >&2
 		exit 1
 	fi
 	cd "${targetDir}/${projectName}" || exit
 	echo "Require ${composerPackage}."
-	composer require -W "${composerPackage}"
+	"${composerApp}" require --update-with-all-dependencies --no-progress "${composerPackage}"
 }
 # It runs the composer config command in the given composer project with the given parameters.
 function composerConfig {
@@ -173,13 +191,14 @@ function composerConfig {
 	local projectName=$2
 	local configKey=$3
 	local configValue=$4
-	if ! command -v composer; then
+	local composerApp=$5
+	if ! command -v "${composerApp}"; then
 		echo "Composer command is not installed. Use the './scripts.sh -a \"install-composer\" -s' command to install it." >&2
 		exit 1
 	fi
 	cd "${targetDir}/${projectName}" || exit
 	echo "Setting the composer ${configKey} to ${configValue}"
-	composer config "${configKey}" "${configValue}"
+	"${composerApp}" config "${configKey}" "${configValue}"
 }
 
 # It deploys the application on the local machine. (copy from composer dir to www dir)
@@ -189,7 +208,14 @@ function localDeploy {
 	local wwwdir=$3
 	local sudo=$4
 	echo "Moving project ${targetDir}/${projectName} to ${wwwdir}/"
-	${sudo} cp -R "${targetDir}/${projectName}" "${wwwdir}/"
+	${sudo} mv "${targetDir}/${projectName}" "${wwwdir}/"
+}
+
+# it changes the owner of the directory to www-data
+function addToWwwUser {
+	local sudo=$1
+	local wwwdir=$2
+	local projectName=$3
 	echo "Changing owner ${wwwdir}/${projectName} to www-data."
 	${sudo} chown -R www-data: "${wwwdir}/${projectName}"
 }
@@ -197,10 +223,13 @@ function localDeploy {
 # It generates a configuration file from template, and moves it to the apache config dir. It also enables the config.
 function apacheConfig {
 	local sudo=$1
-	local projectName=$2
-	local apachedir=$3
+	local projectPath=$2
+	local projectName=$3
+	local apachedir=$4
+	local cur_dir
+	cur_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 	echo "Generate apache config from template."
-	sed "s|%{SITE_NAME}|${projectName}|" apache.conf.template > "${projectName}.conf"
+	sed "s|%{SITE_NAME}|${projectName}|" "${cur_dir}/apache.conf.template" | sed "s|%{PROJECT_PATH}|${projectPath}|" > "${projectName}.conf"
 	echo "Move the generated ${projectName}.conf file to apache conf ${apachedir}/sites-available/ directory."
 	${sudo} mv "${projectName}.conf" "${apachedir}/sites-available/${projectName}.conf"
 	echo "Setup apache config owner to root."
@@ -263,6 +292,8 @@ DB_ROOT_USER_PW=""
 DB_USER_NAME=""
 DB_USER_PW=""
 DB_NAME="drupal"
+DB_HOST="localhost"
+DB_PORT=3306
 PROJECT_BASE_PATH=""
 PROJECT_NAME=""
 DRUSH_CONFIG_NAME=""
@@ -276,6 +307,7 @@ APACHE_CONF_DIR=""
 CIVICRM_VERSION=""
 SITE_ADMIN_USER_NAME=""
 SITE_ADMIN_PASSWD=""
+COMPOSER_APP=composer1
 
 # Get the name of the action.
 if [ ! $# -eq 0 ]; then
@@ -321,6 +353,18 @@ while [ ! $# -eq 0 ]; do
 		--db-name)
 			if [ "$2" ]; then
 				DB_NAME=$2
+				shift
+			fi
+			;;
+		--db-host)
+			if [ "$2" ]; then
+				DB_HOST=$2
+				shift
+			fi
+			;;
+		--db-port)
+			if [ "$2" ]; then
+				DB_PORT=$2
 				shift
 			fi
 			;;
@@ -405,6 +449,12 @@ while [ ! $# -eq 0 ]; do
 		-s | --sudo)
 			SUDO="sudo"
 			;;
+		--composer-app)
+			if [ "$2" ]; then
+				COMPOSER_APP=$2
+				shift
+			fi
+			;;
 		*)
 			echo "Invalid parameter name '$1'"
 			exit 1
@@ -476,14 +526,14 @@ case "${ACTION}" in
 			echo "You have to set both the project base path (--project-base-path) and the project name (--project-name) flags."
 			exit 1
 		fi
-		createComposerProject "${PROJECT_BASE_PATH}" "${PROJECT_NAME}"
+		createComposerProject "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${COMPOSER_APP}"
 		;;
 	install-drush)
 		if [ "${PROJECT_BASE_PATH}" == "" ] || [ "${PROJECT_NAME}" == "" ]; then
 			echo "You have to set both the project base path (--project-base-path) and the project name (--project-name) flags."
 			exit 1
 		fi
-		installDrushCommand "${PROJECT_BASE_PATH}" "${PROJECT_NAME}"
+		installDrushCommand "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${COMPOSER_APP}"
 		;;
 	run-drush-install)
 		if [ "${PROJECT_BASE_PATH}" == "" ] || [ "${PROJECT_NAME}" == "" ]; then
@@ -498,7 +548,7 @@ case "${ACTION}" in
 			echo "You have to set both the administrator user name (--site-admin-user-name) and the administrator user password (--site-admin-password) flags."
 			exit 1
 		fi
-		runDrushInstall "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${DB_ROOT_USER_NAME}" "${DB_ROOT_USER_PW}" "${DB_NAME}" "${SITE_ADMIN_USER_NAME}" "${SITE_ADMIN_PASSWD}"
+		runDrushInstall "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${DB_ROOT_USER_NAME}" "${DB_ROOT_USER_PW}" "${DB_NAME}" "${SITE_ADMIN_USER_NAME}" "${SITE_ADMIN_PASSWD}" "${DB_HOST}" "${DB_PORT}"
 		;;
 	run-cv-install)
 		if [ "${SUDO}" == "" ]; then
@@ -530,7 +580,7 @@ case "${ACTION}" in
 		if [ "${COMPOSER_PROJECT}" == "" ]; then
 			echo "You have to set the composer project (--composer-project \"drush/drush\") flag."
 		fi
-		composerRequire "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${COMPOSER_PROJECT}" 
+		composerRequire "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${COMPOSER_PROJECT}" "${COMPOSER_APP}"
 		;;
 	composer-require-with-deps)
 		if [ "${PROJECT_BASE_PATH}" == "" ] || [ "${PROJECT_NAME}" == "" ]; then
@@ -540,7 +590,7 @@ case "${ACTION}" in
 		if [ "${COMPOSER_PROJECT}" == "" ]; then
 			echo "You have to set the composer project (--composer-project \"drush/drush\") flag."
 		fi
-		composerRequireWithDependencies "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${COMPOSER_PROJECT}" 
+		composerRequireWithDependencies "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${COMPOSER_PROJECT}" "${COMPOSER_APP}"
 		;;
 	composer-config)
 		if [ "${PROJECT_BASE_PATH}" == "" ] || [ "${PROJECT_NAME}" == "" ]; then
@@ -550,7 +600,7 @@ case "${ACTION}" in
 		if [ "${COMPOSER_CONFIG_KEY}" == "" ]; then
 			echo "You have to set the composer config key (--composer-config-key) flag."
 		fi
-		composerConfig "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${COMPOSER_CONFIG_KEY}" "${COMPOSER_CONFIG_VALUE}" 
+		composerConfig "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${COMPOSER_CONFIG_KEY}" "${COMPOSER_CONFIG_VALUE}" "${COMPOSER_APP}"
 		;;
 	local-deploy)
 		if [ "${SUDO}" == "" ]; then
@@ -571,15 +621,15 @@ case "${ACTION}" in
 			echo "You have to set the sudo (-s or --sudo) to be able to deploy the application locally."
 			exit 1
 		fi
-		if  [ "${PROJECT_NAME}" == "" ]; then
-			echo "You have to set the project name (--project-name) flag."
+		if [ "${PROJECT_BASE_PATH}" == "" ] || [ "${PROJECT_NAME}" == "" ]; then
+			echo "You have to set both the project base path (--project-base-path) and the project name (--project-name) flags."
 			exit 1
 		fi
 		if  [ "${APACHE_CONF_DIR}" == "" ]; then
 			echo "You have to set the apache configuration directory (--apache-conf-dir) flag."
 			exit 1
 		fi
-		apacheConfig "${SUDO}" "${PROJECT_NAME}" "${APACHE_CONF_DIR}"
+		apacheConfig "${SUDO}" "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${APACHE_CONF_DIR}"
 		;;
 	remove-project)
 		if [ "${SUDO}" == "" ]; then
@@ -614,6 +664,69 @@ case "${ACTION}" in
 		fi
 		installCivicrml10n "${SUDO}" "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${CIVICRM_VERSION}"
 		;;
+	add-to-www-user)
+		if [ "${SUDO}" == "" ]; then
+			echo "You have to set the sudo (-s or --sudo) to be able to change owner."
+			exit 1
+		fi
+		if [ "${PROJECT_NAME}" == "" ]; then
+			echo "You have to set the project name (--project-name) flag."
+			exit 1
+		fi
+		if [ "${LOCAL_DEPLOY_TARGET}" == "" ]; then
+			echo "You have to set the target of the local deploy (--local-deploy-target) flag."
+		fi
+		addToWwwUser "${SUDO}" "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}"
+		;;
+	ci-build)
+		if [ "${PROJECT_BASE_PATH}" == "" ] || [ "${PROJECT_NAME}" == "" ]; then
+			echo "You have to set both the project base path (--project-base-path) and the project name (--project-name) flags."
+			exit 1
+		fi
+		if  [ "${DB_NAME}" == "" ]; then
+			echo "You have to set the db name (--db-name) to be able to run the site installation."
+			exit 1
+		fi
+		if [ "${SITE_ADMIN_USER_NAME}" == "" ] || [ "${SITE_ADMIN_PASSWD}" == "" ]; then
+			echo "You have to set both the administrator user name (--site-admin-user-name) and the administrator user password (--site-admin-password) flags."
+			exit 1
+		fi
+		if  [ "${APACHE_CONF_DIR}" == "" ]; then
+			echo "You have to set the apache configuration directory (--apache-conf-dir) flag."
+			exit 1
+		fi
+		if [ "${LOCAL_DEPLOY_TARGET}" == "" ]; then
+			echo "You have to set the target of the local deploy (--local-deploy-target) flag."
+		fi
+		if [ "${SUDO}" == "" ]; then
+			echo "You have to set the sudo (-s or --sudo) to be able to run ci-build process."
+			exit 1
+		fi
+		createComposerProject "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${COMPOSER_APP}"
+		localDeploy "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${LOCAL_DEPLOY_TARGET}" "${SUDO}"
+		installDrushCommand "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "${COMPOSER_APP}"
+		runDrushInstall "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "${DB_ROOT_USER_NAME}" "${DB_ROOT_USER_PW}" "${DB_NAME}" "${SITE_ADMIN_USER_NAME}" "${SITE_ADMIN_PASSWD}" "${DB_HOST}" "${DB_PORT}"
+		composerConfig "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "extra.enable-patching" "true" "${COMPOSER_APP}"
+		# The following exception was visible in the github action console.
+		# [Exception]
+		# Cannot prompt for compilation preferences. Please update COMPOSER_COMPILE,
+		# extra.compile-mode, or extra.compile-whitelist.
+		composerConfig "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "extra.compile-mode" "all" "${COMPOSER_APP}"
+		composerRequire "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "civicrm/civicrm-asset-plugin:~1.1" "${COMPOSER_APP}"
+                # due to some symfony finder version issue, the following workaround is applied.
+                # https://lab.civicrm.org/dev/core/-/issues/2177
+		composerRequireSymfony "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "${COMPOSER_APP}"
+                chmod u+w "${LOCAL_DEPLOY_TARGET}/${PROJECT_NAME}/web/sites/default"
+		composerRequireWithDependencies "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "civicrm/civicrm-core:~5.29" "${COMPOSER_APP}"
+		composerRequire "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "civicrm/civicrm-packages:~5.29" "${COMPOSER_APP}"
+		composerRequire "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "civicrm/civicrm-drupal-8:5.29" "${COMPOSER_APP}"
+		installCivicrml10n "${SUDO}" "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "5.29.1"
+		runCvInstall "${SUDO}" "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}"
+		cur_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+		"${SUDO}" mv "${cur_dir}/apache2.conf" "${APACHE_CONF_DIR}/apache2.conf"
+		apacheConfig "${SUDO}" "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "${APACHE_CONF_DIR}"
+		addToWwwUser "${SUDO}" "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}"
+                ;;
 	*)
 		echo "Invalid action name: '${ACTION}'"
 		exit 1
