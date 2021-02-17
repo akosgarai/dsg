@@ -19,6 +19,7 @@ jobs:
     env:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: drupal
+      APACHE_DIR: "/etc/apache2"
     services:
       mysql:
         image: mysql:5.7
@@ -60,6 +61,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install libapache2-mod-php7.3
           sudo a2enmod rewrite
+          sudo mv apache2.conf ${{ env.APACHE_DIR }}/apache2.conf
 
     - name: Run tests.
       env:
@@ -72,7 +74,7 @@ jobs:
         MYSQL_DB_PASS: ${{ env.MYSQL_ROOT_PASSWORD }}
         SITE_ADMIN_NAME: "admin"
         SITE_ADMIN_PW: "jPoLvGGGV5"
-        APACHE_CONF_DIR: "/etc/apache2"
+        APACHE_CONF_DIR: ${{ env.APACHE_DIR }}
         LOCAL_DEPLOY_TARGET: "/var/www/html"
         COMPOSER_APP: composer
       run: |
