@@ -19,10 +19,26 @@ This tool is implemented in the `scripts.sh` file. The tool management is action
 
 For selecting the action what we want to do. Currently the following actions are supported:
 
+- **add-to-www-user** action changes the permission of the target directory. The sudo flag has to be set for this command.
+
+```bash
+./scripts.sh "add-to-www-user" -s --local-deploy-target ".." --project-name "example.com"
+```
+
 - **apache-config** action creates the necessary configuration file, based on the template (apache.conf.template). Then it copies it to the apache directory, enables the config, restarts apache. The sudo flag has to be set for this command.
 
 ```bash
 ./scripts.sh "apache-config" -s --project-name "example.com" --apache-conf-dir "/etc/apache2"
+```
+
+- **ci-build** action builds a drupal app in ci environment. This app could be used for testing other stuff like drupal modules or other extensions. The sudo flag has to be set for this command.
+
+```bash
+./scripts.sh "ci-build" -s --project-base-path ".." --project-name "example.com" \
+        --db-name "drupal" --db-user-name "drupaluser" --site-admin-user-name "admin" \
+        --site-admin-password "admin" --apache-conf-dir "/etc/apache2" --db-host "localhost" \
+        --db-port "3306" --root-db-user-pw "$ROOT_DB_USER_PW" --local-deploy-target "/var/www/html" \
+        --composer-app "composer1"
 ```
 
 - **composer-config** action calls composer config command in the project directory. If the composer application is not installed, it fails.
@@ -176,6 +192,14 @@ This flag manages the password of the mysql database user that we create for man
 ### `--db-name`
 
 This flag manages the name of the mysql database that we create for the drupal site. It is used in the create-database-mysql action. If this flag is not set, it defaults to drupal.
+
+### `--db-host`
+
+This flag manages the host name of the mysql database that we create for the drupal site. It is used in the ci-build, run-drush-install actions. If this flag is not set, it defaults to localhost.
+
+### `--db-port`
+
+This flag manages the port of the mysql database that we create for the drupal site. It is used in the ci-build, run-drush-install actions. If this flag is not set, it defaults to 3306.
 
 ### `--project-base-path`
 
