@@ -1,5 +1,8 @@
 # Drupal site generator - DSG
 
+![CI](https://github.com/akosgarai/DSG/workflows/CI/badge.svg)
+
+
 This tool is writtem for building drupal applications. The tool contains a script file with the commands that I use.
 
 ## Motivations
