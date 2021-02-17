@@ -9,9 +9,9 @@
 	#ServerName www.example.com
 
 	ServerAdmin webmaster@localhost
-	DocumentRoot /var/www/html/%{SITE_NAME}/web
+	DocumentRoot %{PROJECT_PATH}/%{SITE_NAME}/web
 
-	<Directory /var/www/html/%{SITE_NAME}/web>
+	<Directory %{PROJECT_PATH}/%{SITE_NAME}/web>
 		AllowOverride All
 		<IfModule mod_rewrite.c>
 			RewriteEngine on

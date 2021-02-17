@@ -10,6 +10,9 @@ APACHE_CONF_DIR="/etc/apache2"
 PROJECTS_BASE_PATH=".."
 SITE_ADMIN_NAME="admin"
 SITE_ADMIN_PW="jPoLvGGGV5"
+DB_HOST="localhost"
+DB_PORT=3306
+COMPOSER_APP=composer1
 
 # this target installs a new theme to the drupal application (with composer), enables it with drush, and sets it as admin theme.
 install_custom_admin_theme:
@@ -33,6 +36,8 @@ build:
 	@./scripts.sh "install-drush" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}"
 	@./scripts.sh "run-drush-install" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
 		--db-name "${DB_NAME}" \
+		--db-host "${DB_HOST}" \
+		--db-port "${DB_PORT}" \
 		--root-db-user-pw "${MYSQL_DB_PASS}" \
 		--db-user-name "${DB_USER}" \
 		--site-admin-user-name "${SITE_ADMIN_NAME}" \
@@ -47,7 +52,8 @@ build:
 		--drush-config-value '"${SITE_SLOGAN}"'
 	@./scripts.sh "local-deploy" -s --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
 		--local-deploy-target "${TARGET_DIR}"
-	@./scripts.sh "apache-config" -s --project-name "${SITE_NAME}" \
+	@./scripts.sh "add-to-www-user" -s --local-deploy-target "${TARGET_DIR}" --project-name "${SITE_NAME}"
+	@./scripts.sh "apache-config" -s --project-base-path "${TARGET_DIR}" --project-name "${SITE_NAME}" \
 		--apache-conf-dir "${APACHE_CONF_DIR}"
 
 # this is the build process. db init, composer project from scratch, drupal install, civicrm install, apache config.
@@ -57,6 +63,8 @@ build_with_civicrm:
 	@./scripts.sh "install-drush" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}"
 	@./scripts.sh "run-drush-install" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
 		--db-name "${DB_NAME}" \
+		--db-host "${DB_HOST}" \
+		--db-port "${DB_PORT}" \
 		--root-db-user-pw "${MYSQL_DB_PASS}" \
 		--db-user-name "${DB_USER}" \
 		--site-admin-user-name "${SITE_ADMIN_NAME}" \
@@ -85,6 +93,7 @@ build_with_civicrm:
 	@./scripts.sh "run-cv-install" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" -s
 	@./scripts.sh "local-deploy" -s --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
 		--local-deploy-target "${TARGET_DIR}"
+	@./scripts.sh "add-to-www-user" -s --local-deploy-target "${TARGET_DIR}" --project-name "${SITE_NAME}"
 	@./scripts.sh "apache-config" -s --project-name "${SITE_NAME}" \
 		--apache-conf-dir "${APACHE_CONF_DIR}"
 
@@ -100,4 +109,14 @@ rebuild: cleanup_generated_project build
 rebuild_with_civicrm: cleanup_generated_project build-with-civicrm
 
 # this target could be used for building an app in ci environment.
-ci_build: environment_dependencies build
+ci_build:
+	@./scripts.sh "ci-build" -s --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
+		--db-name "${DB_NAME}" \
+		--db-user-name "${DB_USER}" \
+		--site-admin-user-name "${SITE_ADMIN_NAME}" \
+		--site-admin-password "${SITE_ADMIN_PW}" \
+		--apache-conf-dir "${APACHE_CONF_DIR}"  \
+		--db-host "${DB_HOST}" \
+		--db-port "${DB_PORT}" \
+		--root-db-user-pw "${MYSQL_DB_PASS}" \
+		--local-deploy-target "${TARGET_DIR}"
