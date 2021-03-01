@@ -56,10 +56,6 @@ jobs:
           sudo mv cv /usr/local/bin/
           sudo chmod +x /usr/local/bin/cv
 
-    - name: list home directory
-      run: |
-          ls -la /home
-
     - name: Basic apache module and config
       run: |
           sudo apt-get update
