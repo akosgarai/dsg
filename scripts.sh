@@ -129,7 +129,9 @@ function runCvInstall {
 	echo "Making the directory writable"
 	${sudo} chmod +w web/sites/default
 	echo "Installing CiviCRM with cv"
-	cv core:install --cms-base-url="http://localhost/${projectName}/web" --lang="hu_HU"
+	cv core:install --cms-base-url="http://localhost/${projectName}/web" --lang="hu_HU" --no-interaction -m siteKey=civicrm_base_dev_site -m paths.cms.root.path="${targetDir}/${projectName}/web"
+	# It seems, that instead of ['cms.root']['path'], it generates ['cms']['root']['path'].
+	sed -i "s|'cms'\]\['root'|'cms.root'|" web/sites/default/civicrm.settings.php
 	echo "revoke the write permission"
 	${sudo} chmod -w web/sites/default
 }
