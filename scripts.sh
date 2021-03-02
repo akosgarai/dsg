@@ -129,7 +129,9 @@ function runCvInstall {
 	echo "Making the directory writable"
 	${sudo} chmod +w web/sites/default
 	echo "Installing CiviCRM with cv"
-	cv core:install --cms-base-url="http://localhost/${projectName}/web" --lang="hu_HU"
+	cv core:install --cms-base-url="http://localhost/${projectName}/web" --lang="hu_HU" --no-interaction -m siteKey="${SITE_TOKEN}" -m paths.cms.root.path="${targetDir}/${projectName}/web"
+	# It seems, that instead of ['cms.root']['path'], it generates ['cms']['root']['path'].
+	sed -i "s|'cms'\]\['root'|'cms.root'|" web/sites/default/civicrm.settings.php
 	echo "revoke the write permission"
 	${sudo} chmod -w web/sites/default
 }
@@ -308,6 +310,7 @@ CIVICRM_VERSION=""
 SITE_ADMIN_USER_NAME=""
 SITE_ADMIN_PASSWD=""
 COMPOSER_APP=composer1
+SITE_TOKEN=civicrm_base_dev_site
 
 # Get the name of the action.
 if [ ! $# -eq 0 ]; then
@@ -724,6 +727,8 @@ case "${ACTION}" in
 		runCvInstall "${SUDO}" "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}"
 		apacheConfig "${SUDO}" "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "${APACHE_CONF_DIR}"
 		addToWwwUser "${SUDO}" "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}"
+                # Create .cv.json configuration file.
+                echo "{\"sites\":{\"${LOCAL_DEPLOY_TARGET}/${PROJECT_NAME}/web/sites/default/civicrm.settings.php\":{\"TEST_DB_DSN\":\"mysql://${DB_ROOT_USER_NAME}:${DB_ROOT_USER_PW}@${DB_HOST}:${DB_PORT}/${DB_NAME}?new_link=true\",\"SITE_TOKEN\":\"${SITE_TOKEN}\", \"ADMIN_EMAIL\": \"admin@example.com\",\"ADMIN_PASS\": \"${SITE_ADMIN_PASSWD}\",\"ADMIN_USER\": \"${SITE_ADMIN_USER_NAME}\",\"CMS_TITLE\": \"Untitled installation\", \"DEMO_EMAIL\": \"admin@example.com\",\"DEMO_PASS\": \"${SITE_ADMIN_PASSWD}\",\"DEMO_USER\": \"${SITE_ADMIN_USER_NAME}\"}}}" | jq . > /home/runner/.cv.json
                 ;;
 	*)
 		echo "Invalid action name: '${ACTION}'"
