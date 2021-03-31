@@ -719,7 +719,7 @@ case "${ACTION}" in
                 # due to some symfony finder version issue, the following workaround is applied.
                 # https://lab.civicrm.org/dev/core/-/issues/2177
 		composerRequireSymfony "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "${COMPOSER_APP}"
-                chmod u+w "${LOCAL_DEPLOY_TARGET}/${PROJECT_NAME}/web/sites/default"
+		chmod -R u+w "${LOCAL_DEPLOY_TARGET}/${PROJECT_NAME}/web/sites/default"
 		composerRequireWithDependencies "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "civicrm/civicrm-core:~5.29" "${COMPOSER_APP}"
 		composerRequire "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "civicrm/civicrm-packages:~5.29" "${COMPOSER_APP}"
 		composerRequire "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "civicrm/civicrm-drupal-8:5.29" "${COMPOSER_APP}"
