@@ -127,13 +127,11 @@ function runCvInstall {
 	fi
 	cd "${targetDir}/${projectName}" || exit
 	echo "Making the directory writable"
-	${sudo} chmod +w web/sites/default
+	${sudo} chmod -R +w web/sites/default
 	echo "Installing CiviCRM with cv"
 	cv core:install --cms-base-url="http://localhost/${projectName}/web" --lang="hu_HU" --no-interaction -m siteKey="${SITE_TOKEN}" -m paths.cms.root.path="${targetDir}/${projectName}/web"
 	# It seems, that instead of ['cms.root']['path'], it generates ['cms']['root']['path'].
 	sed -i "s|'cms'\]\['root'|'cms.root'|" web/sites/default/civicrm.settings.php
-	echo "revoke the write permission"
-	${sudo} chmod -w web/sites/default
 }
 
 # It runs the drush config set command in the given composer project with the given parameters.
