@@ -132,6 +132,8 @@ function runCvInstall {
 	cv core:install --cms-base-url="http://localhost/${projectName}/web" --lang="hu_HU" --no-interaction -m siteKey="${SITE_TOKEN}" -m paths.cms.root.path="${targetDir}/${projectName}/web"
 	# It seems, that instead of ['cms.root']['path'], it generates ['cms']['root']['path'].
 	sed -i "s|'cms'\]\['root'|'cms.root'|" web/sites/default/civicrm.settings.php
+        # create the config and log directory.
+        mkdir -p web/sites/default/files/civicrm/ConfigAndLog
 	echo "Making the new content writable"
 	${sudo} chmod -R +w web/sites/default
 }
