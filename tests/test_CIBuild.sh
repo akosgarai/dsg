@@ -6,7 +6,7 @@ APP="${CUR_DIR}/../scripts.sh"
 
 # setup default parameters
 # --project-base-path
-TEST_PROJECT_BASE_PATH="${CUR_DIR}/${PROJECT_BASE_PATH:-".."}"
+TEST_PROJECT_BASE_PATH="${PROJECT_BASE_PATH:-".."}"
 TEST_SITE_NAME=${SITE_NAME:-"testsite.com"}
 TEST_DB_NAME=${DB_NAME:-"drupaltests"}
 TEST_DB_USER=${DB_USER:-"root"}
