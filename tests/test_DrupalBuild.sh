@@ -152,8 +152,6 @@ function Test_DrupalBuildActionPathName {
 
 # Define the test cases
 TEST_CASES=(
-    Test_WithoutActionName
-    Test_InvalidActionName
     Test_DrupalBuildOnlyAction
     Test_DrupalBuildActionPath
     Test_DrupalBuildActionName
