@@ -19,41 +19,10 @@ TEST_DB_PORT=${DB_PORT:-3308}
 TEST_LOCAL_DEPLOY_TARGET=${LOCAL_DEPLOY_TARGET:-"/var/www/html"}
 TEST_COMPOSER_APP=${COMPOSER_APP:-"composer1"}
 
-# Without input params the app should fail.
-
-function Test_WithoutActionName {
-    local msg="Without action name the script should return error. "
+function Test_DrupalBuildOnlyAction {
+    local msg="With only drupal-build action name the script should return error. "
     local code=0
-    local result
-    result=$("${APP}")
-    if [ ! "${result}" == "Missing action name." ]; then
-        msg="${msg}- FAILED"
-        code=1
-    else
-        msg="${msg}- OK"
-    fi
-    echo "${msg}"
-    return ${code}
-}
-function Test_InvalidActionName {
-    local msg="With invalid action name the script should return error. "
-    local code=0
-    local actionName=invalidactionname
-    local result
-    result=$("${APP}" "${actionName}")
-    if [ ! "${result}" == "Invalid action name: '${actionName}'" ]; then
-        msg="${msg}- FAILED"
-        code=1
-    else
-        msg="${msg}- OK"
-    fi
-    echo "${msg}"
-    return ${code}
-}
-function Test_CiBuildOnlyAction {
-    local msg="With only ci-build action name the script should return error. "
-    local code=0
-    local actionName=ci-build
+    local actionName=drupal-build
     local result
     result=$("${APP}" "${actionName}")
     if [ ! "${result}" == "You have to set both the project base path (--project-base-path) and the project name (--project-name) flags." ]; then
@@ -65,10 +34,10 @@ function Test_CiBuildOnlyAction {
     echo "${msg}"
     return ${code}
 }
-function Test_CiBuildActionPath {
-    local msg="With ci-build action name and --project-base-path flag the script should return error. "
+function Test_DrupalBuildActionPath {
+    local msg="With drupal-build action name and --project-base-path flag the script should return error. "
     local code=0
-    local actionName=ci-build
+    local actionName=drupal-build
     local result
     result=$("${APP}" "${actionName}" --project-base-path "${TEST_PROJECT_BASE_PATH}")
     if [ ! "${result}" == "You have to set both the project base path (--project-base-path) and the project name (--project-name) flags." ]; then
@@ -80,10 +49,10 @@ function Test_CiBuildActionPath {
     echo "${msg}"
     return ${code}
 }
-function Test_CiBuildActionName {
-    local msg="With ci-build action name and --project-name flag the script should return error. "
+function Test_DrupalBuildActionName {
+    local msg="With drupal-build action name and --project-name flag the script should return error. "
     local code=0
-    local actionName=ci-build
+    local actionName=drupal-build
     local result
     result=$("${APP}" "${actionName}" --project-name "${TEST_SITE_NAME}")
     if [ ! "${result}" == "You have to set both the project base path (--project-base-path) and the project name (--project-name) flags." ]; then
@@ -95,17 +64,17 @@ function Test_CiBuildActionName {
     echo "${msg}"
     return ${code}
 }
-function Test_CiBuildWithoutSudoFlag {
-    local msg="Without the sudo flag the ci-build action should return error. "
+function Test_DrupalBuildWithoutSudoFlag {
+    local msg="Without the sudo flag the drupal-build action should return error. "
     local code=0
-    local actionName=ci-build
+    local actionName=drupal-build
     local result
     result=$("${APP}" "${actionName}" --project-base-path "${TEST_PROJECT_BASE_PATH}" --project-name "${TEST_SITE_NAME}" \
         --db-name "${TEST_DB_NAME}" --db-user-name "${TEST_DB_USER}" --site-admin-user-name "${TEST_SITE_ADMIN_NAME}" \
         --site-admin-password "${TEST_SITE_ADMIN_PW}" --apache-conf-dir "${TEST_APACHE_CONF_DIR}" --db-host "${TEST_DB_HOST}" \
         --db-port "${TEST_DB_PORT}" --root-db-user-pw "${TEST_ROOT_DB_USER_PW}" --local-deploy-target "${TEST_LOCAL_DEPLOY_TARGET}" \
         --composer-app "${TEST_COMPOSER_APP}")
-    if [ ! "${result}" == "You have to set the sudo (-s or --sudo) to be able to run ci-build process." ]; then
+    if [ ! "${result}" == "You have to set the sudo (-s or --sudo) to be able to run drupal-build process." ]; then
         msg="${msg}- FAILED"
         code=1
     else
@@ -114,10 +83,10 @@ function Test_CiBuildWithoutSudoFlag {
     echo "${msg}"
     return ${code}
 }
-function Test_CiBuildActionPathName {
-    local msg="With ci-build action valid setup, a composer project has to be created."
+function Test_DrupalBuildActionPathName {
+    local msg="With drupal-build action valid setup, a composer project has to be created."
     local code=0
-    local actionName=ci-build
+    local actionName=drupal-build
     if [ ! -d "${TEST_PROJECT_BASE_PATH}" ]; then
         mkdir -p "${TEST_PROJECT_BASE_PATH}"
     fi
@@ -155,25 +124,17 @@ function Test_CiBuildActionPathName {
     else
         msg="${msg}\n\tStatus code not existing path '${url}notvalidpath' (${curlCode}). - OK"
     fi
-    curlCode=0
-    curlCode=$(curl -o /dev/null -w "%{http_code}\n" -s -XGET "${url}civicrm/")
-    if [ ! "${curlCode}" == "403" ]; then
-        msg="${msg}\n\tStatus code w/o login '${url}civicrm/' (${curlCode}) not 403. - FAILED"
-        code=1
-    else
-        msg="${msg}\n\tStatus code w/o login '${url}civicrm/' (${curlCode}). - OK"
-    fi
     # redirect to civicrm page with the drush otp.
     local otp
-    otp=$("${TEST_LOCAL_DEPLOY_TARGET}/${TEST_SITE_NAME}"/vendor/drush/drush/drush uli --uri="${url}" --uid=1 civicrm --no-browser)
+    otp=$("${TEST_LOCAL_DEPLOY_TARGET}/${TEST_SITE_NAME}"/vendor/drush/drush/drush uli --uri="${url}" --uid=1 admin/content --no-browser)
     # the cookies has to be passed to the redirects.
     curlCode=0
     curlCode=$(curl -o /dev/null -w "%{http_code}\n" -s -L -c cookies.txt -b cookies.txt -XGET "${otp}")
     if [ ! "${curlCode}" == "200" ]; then
-        msg="${msg}\n\tStatus code with login '${url}civicrm/' (${curlCode}) not 200. - FAILED"
+        msg="${msg}\n\tStatus code with login '${url}admin/content/' (${curlCode}) not 200. - FAILED"
         code=1
     else
-        msg="${msg}\n\tStatus code with login '${url}civicrm/' (${curlCode}). - OK"
+        msg="${msg}\n\tStatus code with login '${url}admin/content/' (${curlCode}). - OK"
     fi
     echo -e "${msg}"
     # cleanup
@@ -183,13 +144,11 @@ function Test_CiBuildActionPathName {
 
 # Define the test cases
 TEST_CASES=(
-    Test_WithoutActionName
-    Test_InvalidActionName
-    Test_CiBuildOnlyAction
-    Test_CiBuildActionPath
-    Test_CiBuildActionName
-    Test_CiBuildWithoutSudoFlag
-    Test_CiBuildActionPathName
+    Test_DrupalBuildOnlyAction
+    Test_DrupalBuildActionPath
+    Test_DrupalBuildActionName
+    Test_DrupalBuildWithoutSudoFlag
+    Test_DrupalBuildActionPathName
 )
 
 # Run test cases

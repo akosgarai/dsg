@@ -212,8 +212,12 @@ function localDeploy {
 	local projectName=$2
 	local wwwdir=$3
 	local sudo=$4
-	echo "Moving project ${targetDir}/${projectName} to ${wwwdir}/"
-	${sudo} mv "${targetDir}/${projectName}" "${wwwdir}/"
+	echo "Moving project ${SCRIPTS_DIR}/${targetDir}/${projectName} to ${wwwdir}/"
+        if [ ! -d "${SCRIPTS_DIR}/${targetDir}/${projectName}" ]; then
+            echo "Directory ${SCRIPTS_DIR}/${targetDir}/${projectName} does not exist. Aborting. " >&2
+            exit 1
+        fi
+	${sudo} mv "${SCRIPTS_DIR}/${targetDir}/${projectName}" "${wwwdir}/"
 }
 
 # it changes the owner of the directory to www-data
@@ -231,10 +235,8 @@ function apacheConfig {
 	local projectPath=$2
 	local projectName=$3
 	local apachedir=$4
-	local cur_dir
-	cur_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 	echo "Generate apache config from template."
-	sed "s|%{SITE_NAME}|${projectName}|" "${cur_dir}/apache.conf.template" | sed "s|%{PROJECT_PATH}|${projectPath}|" > "${projectName}.conf"
+	sed "s|%{SITE_NAME}|${projectName}|" "${SCRIPTS_DIR}/apache.conf.template" | sed "s|%{PROJECT_PATH}|${projectPath}|" > "${projectName}.conf"
 	echo "Move the generated ${projectName}.conf file to apache conf ${apachedir}/sites-available/ directory."
 	${sudo} mv "${projectName}.conf" "${apachedir}/sites-available/${projectName}.conf"
 	echo "Setup apache config owner to root."
@@ -314,6 +316,7 @@ SITE_ADMIN_USER_NAME=""
 SITE_ADMIN_PASSWD=""
 COMPOSER_APP=composer1
 SITE_TOKEN=civicrm_base_dev_site
+SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 # Get the name of the action.
 if [ ! $# -eq 0 ]; then
@@ -682,6 +685,38 @@ case "${ACTION}" in
 		if [ "${LOCAL_DEPLOY_TARGET}" == "" ]; then
 			echo "You have to set the target of the local deploy (--local-deploy-target) flag."
 		fi
+		addToWwwUser "${SUDO}" "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}"
+		;;
+	drupal-build)
+		if [ "${PROJECT_BASE_PATH}" == "" ] || [ "${PROJECT_NAME}" == "" ]; then
+			echo "You have to set both the project base path (--project-base-path) and the project name (--project-name) flags."
+			exit 1
+		fi
+		if  [ "${DB_NAME}" == "" ]; then
+			echo "You have to set the db name (--db-name) to be able to run the site installation."
+			exit 1
+		fi
+		if [ "${SITE_ADMIN_USER_NAME}" == "" ] || [ "${SITE_ADMIN_PASSWD}" == "" ]; then
+			echo "You have to set both the administrator user name (--site-admin-user-name) and the administrator user password (--site-admin-password) flags."
+			exit 1
+		fi
+		if  [ "${APACHE_CONF_DIR}" == "" ]; then
+			echo "You have to set the apache configuration directory (--apache-conf-dir) flag."
+			exit 1
+		fi
+		if [ "${LOCAL_DEPLOY_TARGET}" == "" ]; then
+			echo "You have to set the target of the local deploy (--local-deploy-target) flag."
+		fi
+		if [ "${SUDO}" == "" ]; then
+			echo "You have to set the sudo (-s or --sudo) to be able to run drupal-build process."
+			exit 1
+		fi
+		createComposerProject "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${COMPOSER_APP}"
+		localDeploy "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${LOCAL_DEPLOY_TARGET}" "${SUDO}"
+		installDrushCommand "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "${COMPOSER_APP}"
+		runDrushInstall "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "${DB_ROOT_USER_NAME}" "${DB_ROOT_USER_PW}" "${DB_NAME}" "${SITE_ADMIN_USER_NAME}" "${SITE_ADMIN_PASSWD}" "${DB_HOST}" "${DB_PORT}"
+		chmod -R u+w "${LOCAL_DEPLOY_TARGET}/${PROJECT_NAME}/web/sites/default"
+		apacheConfig "${SUDO}" "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "${APACHE_CONF_DIR}"
 		addToWwwUser "${SUDO}" "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}"
 		;;
 	ci-build)

@@ -30,6 +30,19 @@ environment_dependencies:
 	@./scripts.sh "install-composer" -s
 
 # this is the build process. db init, composer project from scratch, drupal install, apache config.
+drupal_build: cleanup_generated_project
+	@./scripts.sh "drupal-build" -s --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
+		--db-name "${DB_NAME}" \
+		--db-user-name "${DB_USER}" \
+		--site-admin-user-name "${SITE_ADMIN_NAME}" \
+		--site-admin-password "${SITE_ADMIN_PW}" \
+		--apache-conf-dir "${APACHE_CONF_DIR}"  \
+		--db-host "${DB_HOST}" \
+		--db-port "${DB_PORT}" \
+		--root-db-user-pw "${MYSQL_DB_PASS}" \
+		--local-deploy-target "${TARGET_DIR}" \
+		--composer-app "composer"
+# this is the build process. db init, composer project from scratch, drupal install, apache config.
 build:
 	@./scripts.sh "create-database-mysql" --root-db-user-pw "${MYSQL_DB_PASS}" --db-user-name "${DB_USER}" --db-name "${DB_NAME}"
 	@./scripts.sh "create-composer-project" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}"

@@ -80,3 +80,4 @@ jobs:
         COMPOSER_APP: composer
       run: |
           ./tests/test_CIBuild.sh
+          ./tests/test_DrupalBuild.sh
