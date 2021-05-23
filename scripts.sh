@@ -708,7 +708,7 @@ case "${ACTION}" in
 			echo "You have to set the target of the local deploy (--local-deploy-target) flag."
 		fi
 		if [ "${SUDO}" == "" ]; then
-			echo "You have to set the sudo (-s or --sudo) to be able to run ci-build process."
+			echo "You have to set the sudo (-s or --sudo) to be able to run drupal-build process."
 			exit 1
 		fi
 		createComposerProject "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${COMPOSER_APP}"
