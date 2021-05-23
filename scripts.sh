@@ -201,7 +201,7 @@ function composerConfig {
 		echo "Composer command is not installed. Use the './scripts.sh -a \"install-composer\" -s' command to install it." >&2
 		exit 1
 	fi
-	cd "${CUR_DIR}/${targetDir}/${projectName}" || exit
+	cd "${SCRIPTS_DIR}/${targetDir}/${projectName}" || exit
 	echo "Setting the composer ${configKey} to ${configValue}"
 	"${composerApp}" config "${configKey}" "${configValue}"
 }
@@ -212,12 +212,12 @@ function localDeploy {
 	local projectName=$2
 	local wwwdir=$3
 	local sudo=$4
-	echo "Moving project ${CUR_DIR}/${targetDir}/${projectName} to ${wwwdir}/"
-        if [ ! -d "${CUR_DIR}/${targetDir}/${projectName}" ]; then
-            echo "Directory ${CUR_DIR}/${targetDir}/${projectName} does not exist. Aborting. " >&2
+	echo "Moving project ${SCRIPTS_DIR}/${targetDir}/${projectName} to ${wwwdir}/"
+        if [ ! -d "${SCRIPTS_DIR}/${targetDir}/${projectName}" ]; then
+            echo "Directory ${SCRIPTS_DIR}/${targetDir}/${projectName} does not exist. Aborting. " >&2
             exit 1
         fi
-	${sudo} mv "${CUR_DIR}/${targetDir}/${projectName}" "${wwwdir}/"
+	${sudo} mv "${SCRIPTS_DIR}/${targetDir}/${projectName}" "${wwwdir}/"
 }
 
 # it changes the owner of the directory to www-data
@@ -236,7 +236,7 @@ function apacheConfig {
 	local projectName=$3
 	local apachedir=$4
 	echo "Generate apache config from template."
-	sed "s|%{SITE_NAME}|${projectName}|" "${CUR_DIR}/apache.conf.template" | sed "s|%{PROJECT_PATH}|${projectPath}|" > "${projectName}.conf"
+	sed "s|%{SITE_NAME}|${projectName}|" "${SCRIPTS_DIR}/apache.conf.template" | sed "s|%{PROJECT_PATH}|${projectPath}|" > "${projectName}.conf"
 	echo "Move the generated ${projectName}.conf file to apache conf ${apachedir}/sites-available/ directory."
 	${sudo} mv "${projectName}.conf" "${apachedir}/sites-available/${projectName}.conf"
 	echo "Setup apache config owner to root."
@@ -316,7 +316,7 @@ SITE_ADMIN_USER_NAME=""
 SITE_ADMIN_PASSWD=""
 COMPOSER_APP=composer1
 SITE_TOKEN=civicrm_base_dev_site
-CUR_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 # Get the name of the action.
 if [ ! $# -eq 0 ]; then
