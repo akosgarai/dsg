@@ -201,7 +201,7 @@ function composerConfig {
 		echo "Composer command is not installed. Use the './scripts.sh -a \"install-composer\" -s' command to install it." >&2
 		exit 1
 	fi
-	cd "${SCRIPTS_DIR}/${targetDir}/${projectName}" || exit
+	cd "${targetDir}/${projectName}" || exit
 	echo "Setting the composer ${configKey} to ${configValue}"
 	"${composerApp}" config "${configKey}" "${configValue}"
 }
