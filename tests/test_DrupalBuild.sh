@@ -124,25 +124,17 @@ function Test_DrupalBuildActionPathName {
     else
         msg="${msg}\n\tStatus code not existing path '${url}notvalidpath' (${curlCode}). - OK"
     fi
-    curlCode=0
-    curlCode=$(curl -o /dev/null -w "%{http_code}\n" -s -XGET "${url}civicrm/")
-    if [ ! "${curlCode}" == "403" ]; then
-        msg="${msg}\n\tStatus code w/o login '${url}civicrm/' (${curlCode}) not 403. - FAILED"
-        code=1
-    else
-        msg="${msg}\n\tStatus code w/o login '${url}civicrm/' (${curlCode}). - OK"
-    fi
     # redirect to civicrm page with the drush otp.
     local otp
-    otp=$("${TEST_LOCAL_DEPLOY_TARGET}/${TEST_SITE_NAME}"/vendor/drush/drush/drush uli --uri="${url}" --uid=1 civicrm --no-browser)
+    otp=$("${TEST_LOCAL_DEPLOY_TARGET}/${TEST_SITE_NAME}"/vendor/drush/drush/drush uli --uri="${url}" --uid=1 admin/content --no-browser)
     # the cookies has to be passed to the redirects.
     curlCode=0
     curlCode=$(curl -o /dev/null -w "%{http_code}\n" -s -L -c cookies.txt -b cookies.txt -XGET "${otp}")
     if [ ! "${curlCode}" == "200" ]; then
-        msg="${msg}\n\tStatus code with login '${url}civicrm/' (${curlCode}) not 200. - FAILED"
+        msg="${msg}\n\tStatus code with login '${url}admin/content/' (${curlCode}) not 200. - FAILED"
         code=1
     else
-        msg="${msg}\n\tStatus code with login '${url}civicrm/' (${curlCode}). - OK"
+        msg="${msg}\n\tStatus code with login '${url}admin/content/' (${curlCode}). - OK"
     fi
     echo -e "${msg}"
     # cleanup
