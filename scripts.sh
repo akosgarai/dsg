@@ -87,7 +87,7 @@ function createComposerProject {
 		echo "Composer command is not installed. Use the './scripts.sh -a \"install-composer\" -s' command to install it." >&2
 		exit 1
 	fi
-	cd "${targetDir}" || exit
+	cd "${SCRIPTS_DIR}/${targetDir}" || exit
 	"${composerApp}" create-project drupal/recommended-project:8.x "${projectName}" --no-interaction --no-progress
 }
 
