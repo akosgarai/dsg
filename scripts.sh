@@ -97,7 +97,7 @@ function installDrushCommand {
 	local projectName=$2
 	local composerApp=$3
 	echo "Installing drush with composer"
-	composerRequire "${targetDir}" "${projectName}" "drush/drush" "${composerApp}"
+	composerRequire "${targetDir}" "${projectName}" "drush/drush:^10.3" "${composerApp}"
 }
 
 # It runs the drush install command in the given composer project.
@@ -760,7 +760,7 @@ case "${ACTION}" in
 		chmod -R u+w "${LOCAL_DEPLOY_TARGET}/${PROJECT_NAME}/web/sites/default"
 		composerRequireWithDependencies "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "civicrm/civicrm-core:~5.37" "${COMPOSER_APP}"
 		composerRequire "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "civicrm/civicrm-packages:~5.37" "${COMPOSER_APP}"
-		composerRequire "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "civicrm/civicrm-drupal-8:5.37" "${COMPOSER_APP}"
+		composerRequire "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "civicrm/civicrm-drupal-8:~5.37" "${COMPOSER_APP}"
 		installCivicrml10n "${SUDO}" "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "5.37.0"
 		runCvInstall "${SUDO}" "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}"
 		apacheConfig "${SUDO}" "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "${APACHE_CONF_DIR}"
