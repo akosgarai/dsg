@@ -1,9 +1,9 @@
-PHP_VER=7.3
+PHP_VER=7.4
 SUDO=sudo
-DB_NAME=drupal
+DB_NAME=dsg
 DB_USER="drupaluser@localhost"
 DB_PW="Drup4l.Us5r"
-SITE_NAME="composer-site.com"
+SITE_NAME="dsg-site.com"
 SITE_SLOGAN="This site is build with cli tools."
 TARGET_DIR="/var/www/html"
 APACHE_CONF_DIR="/etc/apache2"
@@ -74,7 +74,9 @@ build_with_civicrm:
 	@./scripts.sh "create-database-mysql" --root-db-user-pw "${MYSQL_DB_PASS}" --db-user-name "${DB_USER}" --db-name "${DB_NAME}"
 	@./scripts.sh "create-composer-project" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}"
 	@./scripts.sh "install-drush" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}"
-	@./scripts.sh "run-drush-install" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
+	@./scripts.sh "local-deploy" -s --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
+		--local-deploy-target "${TARGET_DIR}"
+	@./scripts.sh "run-drush-install" --project-base-path "${TARGET_DIR}" --project-name "${SITE_NAME}" \
 		--db-name "${DB_NAME}" \
 		--db-host "${DB_HOST}" \
 		--db-port "${DB_PORT}" \
@@ -82,32 +84,33 @@ build_with_civicrm:
 		--db-user-name "${DB_USER}" \
 		--site-admin-user-name "${SITE_ADMIN_NAME}" \
 		--site-admin-password "${SITE_ADMIN_PW}"
-	@./scripts.sh -a "run-drush-config-set" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
+	@./scripts.sh "run-drush-config-set" --project-base-path "${TARGET_DIR}" --project-name "${SITE_NAME}" \
 		--drush-config-name "system.site" \
 		--drush-config-key "name" \
 		--drush-config-value "${SITE_NAME}"
-	@./scripts.sh "run-drush-config-set" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
+	@./scripts.sh "run-drush-config-set" --project-base-path "${TARGET_DIR}" --project-name "${SITE_NAME}" \
 		--drush-config-name "system.site" \
 		--drush-config-key "slogan" \
 		--drush-config-value '"${SITE_SLOGAN}"'
-	@./scripts.sh "composer-config" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
+	@./scripts.sh "composer-config" --project-base-path "${TARGET_DIR}" --project-name "${SITE_NAME}" \
 		--composer-config-key "extra.enable-patching" \
 		--composer-config-value "true"
-	@./scripts.sh "composer-require" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
+	@./scripts.sh "composer-config" --project-base-path "${TARGET_DIR}" --project-name "${SITE_NAME}" \
+		--composer-config-key "extra.compile-mode" \
+		--composer-config-value "all"
+	@./scripts.sh "composer-require" --project-base-path "${TARGET_DIR}" --project-name "${SITE_NAME}" \
 		--composer-project "civicrm/civicrm-asset-plugin:~1.1"
-	@./scripts.sh "composer-require-with-deps" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
-		--composer-project "civicrm/civicrm-core:~5.29"
-	@./scripts.sh "composer-require" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
-		--composer-project "civicrm/civicrm-packages:~5.29"
-	@./scripts.sh "composer-require" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
-		--composer-project "civicrm/civicrm-drupal-8:5.29"
-	@./scripts.sh "install-civicrm-l10n" -s --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" --civicrm-version "5.29.1"
+	@./scripts.sh "composer-require-with-deps" --project-base-path "${TARGET_DIR}" --project-name "${SITE_NAME}" \
+		--composer-project "civicrm/civicrm-core:~5.43"
+	@./scripts.sh "composer-require" --project-base-path "${TARGET_DIR}" --project-name "${SITE_NAME}" \
+		--composer-project "civicrm/civicrm-packages:~5.43"
+	@./scripts.sh "composer-require" --project-base-path "${TARGET_DIR}" --project-name "${SITE_NAME}" \
+		--composer-project "civicrm/civicrm-drupal-8:5.43"
+	@./scripts.sh "install-civicrm-l10n" -s --project-base-path "${TARGET_DIR}" --project-name "${SITE_NAME}" --civicrm-version "5.43.2"
 	@./scripts.sh "install-cv" -s
-	@./scripts.sh "run-cv-install" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" -s
-	@./scripts.sh "local-deploy" -s --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
-		--local-deploy-target "${TARGET_DIR}"
+	@./scripts.sh "run-cv-install" --project-base-path "${TARGET_DIR}" --project-name "${SITE_NAME}" -s
 	@./scripts.sh "add-to-www-user" -s --local-deploy-target "${TARGET_DIR}" --project-name "${SITE_NAME}"
-	@./scripts.sh "apache-config" -s --project-name "${SITE_NAME}" \
+	@./scripts.sh "apache-config" -s --project-base-path "${TARGET_DIR}" --project-name "${SITE_NAME}" \
 		--apache-conf-dir "${APACHE_CONF_DIR}"
 
 cleanup_generated_project:
