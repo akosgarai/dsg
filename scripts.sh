@@ -62,7 +62,7 @@ function createDatabaseMysql {
 	local siteUserName=$3
 	local dbName=$4
 	echo "Creating ${dbName} database and giving all grants to ${siteUserName} user."
-	mysql -u "${rootUserName}" -p"${rootUserPW}" --execute="DROP DATABASE ${dbName}; CREATE DATABASE ${dbName}; GRANT ALL ON ${dbName}.* TO ${siteUserName}; flush privileges;"
+	mysql -u "${rootUserName}" -p"${rootUserPW}" --execute="DROP DATABASE IF EXISTS ${dbName}; CREATE DATABASE ${dbName}; GRANT ALL ON ${dbName}.* TO ${siteUserName}; flush privileges;"
 }
 
 # It installs the composer under the /usr/local/bin dir.
@@ -88,7 +88,7 @@ function createComposerProject {
 		exit 1
 	fi
 	cd "${SCRIPTS_DIR}/${targetDir}" || exit
-	"${composerApp}" create-project drupal/recommended-project:8.x "${projectName}" --no-interaction --no-progress
+	"${composerApp}" create-project drupal/recommended-project "${projectName}" --no-interaction --no-progress
 }
 
 # It installs the drush command to the previously created composer project.
@@ -97,7 +97,7 @@ function installDrushCommand {
 	local projectName=$2
 	local composerApp=$3
 	echo "Installing drush with composer"
-	composerRequire "${targetDir}" "${projectName}" "drush/drush:^10.3" "${composerApp}"
+	composerRequire "${targetDir}" "${projectName}" "drush/drush" "${composerApp}"
 }
 
 # It runs the drush install command in the given composer project.
@@ -129,7 +129,7 @@ function runCvInstall {
 	echo "Making the directory writable"
 	${sudo} chmod -R +w web/sites/default
 	echo "Installing CiviCRM with cv"
-	cv core:install --cms-base-url="http://localhost/${projectName}/web" --lang="hu_HU" --no-interaction -m siteKey="${SITE_TOKEN}" -m paths.cms.root.path="${targetDir}/${projectName}/web"
+	cv core:install --cms-base-url="http://localhost/" --lang="hu_HU" --no-interaction -m siteKey="${SITE_TOKEN}" -m paths.cms.root.path="${targetDir}"
 	# It seems, that instead of ['cms.root']['path'], it generates ['cms']['root']['path'].
 	sed -i "s|'cms'\]\['root'|'cms.root'|" web/sites/default/civicrm.settings.php
 	# create the config and log directory.
@@ -148,7 +148,7 @@ function runDrushConfigSet {
 	local configValue=$5
 	cd "${targetDir}/${projectName}" || exit
 	echo "Setting the ${configName} ${configKey} to ${configValue}"
-	./vendor/drush/drush/drush config-set "${configName}" "${configKey}" "${configValue}"
+	./vendor/drush/drush/drush config-set --yes "${configName}" "${configKey}" "${configValue}"
 }
 
 # It runs composer require command with the given package.
@@ -163,7 +163,7 @@ function composerRequire {
 	fi
 	cd "${targetDir}/${projectName}" || exit
 	echo "Require ${composerPackage}."
-	"${composerApp}" require --no-progress "${composerPackage}"
+	"${composerApp}" require --no-interaction --no-progress "${composerPackage}"
 }
 # It runs composer require command for a workaround.
 function composerRequireSymfony {
@@ -175,7 +175,7 @@ function composerRequireSymfony {
 		exit 1
 	fi
 	cd "${targetDir}/${projectName}" || exit
-	"${composerApp}" require symfony/finder:"5.2.3 as 4.4.18"
+	"${composerApp}" require --no-interaction symfony/finder:"5.2.3 as 4.4.18"
 }
 function composerRequireWithDependencies {
 	local targetDir=$1
@@ -188,7 +188,7 @@ function composerRequireWithDependencies {
 	fi
 	cd "${targetDir}/${projectName}" || exit
 	echo "Require ${composerPackage}."
-	"${composerApp}" require --update-with-all-dependencies --no-progress "${composerPackage}"
+	"${composerApp}" require --no-interaction --update-with-all-dependencies --no-progress "${composerPackage}"
 }
 # It runs the composer config command in the given composer project with the given parameters.
 function composerConfig {
@@ -314,7 +314,7 @@ APACHE_CONF_DIR=""
 CIVICRM_VERSION=""
 SITE_ADMIN_USER_NAME=""
 SITE_ADMIN_PASSWD=""
-COMPOSER_APP=composer1
+COMPOSER_APP=composer
 SITE_TOKEN=civicrm_base_dev_site
 SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
