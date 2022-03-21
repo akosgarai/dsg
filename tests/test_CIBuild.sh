@@ -160,7 +160,6 @@ function Test_CiBuildActionPathName {
     if [ ! "${curlCode}" == "403" ]; then
         msg="${msg}\n\tStatus code w/o login '${url}civicrm/' (${curlCode}) not 403. - FAILED"
         code=1
-        curl -s -XGET "${url}civicrm/" -vvv
     else
         msg="${msg}\n\tStatus code w/o login '${url}civicrm/' (${curlCode}). - OK"
     fi
