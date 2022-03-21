@@ -158,8 +158,6 @@ function Test_DrupalCivicrmBuildActionPathName {
         msg="${msg}\n\tStatus code with login '${url}civicrm' (${curlCode}). - OK"
     fi
     echo -e "${msg}"
-    # cleanup
-    sudo rm -rf "${TEST_LOCAL_DEPLOY_TARGET:?}/${TEST_SITE_NAME}"
     return ${code}
 }
 

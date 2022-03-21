@@ -77,5 +77,8 @@ jobs:
         COMPOSER_APP: composer
       run: |
           ./tests/test_DrupalBuild.sh
+          sudo rm -rf "${{ env.LOCAL_DEPLOY_TARGET }}/${{ env.SITE_NAME }}"
           ./tests/test_DrupalCivicrmBuild.sh
+          sudo rm -rf "${{ env.LOCAL_DEPLOY_TARGET }}/${{ env.SITE_NAME }}"
           ./tests/test_CIBuild.sh
+          sudo rm -rf "${{ env.LOCAL_DEPLOY_TARGET }}/${{ env.SITE_NAME }}"

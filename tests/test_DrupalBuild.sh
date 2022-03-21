@@ -17,7 +17,7 @@ TEST_APACHE_CONF_DIR=${APACHE_CONF_DIR:-"/etc/apache2"}
 TEST_DB_HOST=${DB_HOST:-"localhost"}
 TEST_DB_PORT=${DB_PORT:-3308}
 TEST_LOCAL_DEPLOY_TARGET=${LOCAL_DEPLOY_TARGET:-"/var/www/html"}
-TEST_COMPOSER_APP=${COMPOSER_APP:-"composer1"}
+TEST_COMPOSER_APP=${COMPOSER_APP:-"composer"}
 
 function Test_DrupalBuildOnlyAction {
     local msg="With only drupal-build action name the script should return error. "
@@ -137,8 +137,6 @@ function Test_DrupalBuildActionPathName {
         msg="${msg}\n\tStatus code with login '${url}admin/content/' (${curlCode}). - OK"
     fi
     echo -e "${msg}"
-    # cleanup
-    sudo rm -rf "${TEST_LOCAL_DEPLOY_TARGET:?}/${TEST_SITE_NAME}"
     return ${code}
 }
 
