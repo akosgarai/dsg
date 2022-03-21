@@ -62,7 +62,7 @@ function createDatabaseMysql {
 	local siteUserName=$3
 	local dbName=$4
 	echo "Creating ${dbName} database and giving all grants to ${siteUserName} user."
-	mysql -u "${rootUserName}" -p"${rootUserPW}" --execute="DROP DATABASE ${dbName}; CREATE DATABASE ${dbName}; GRANT ALL ON ${dbName}.* TO ${siteUserName}; flush privileges;"
+	mysql -u "${rootUserName}" -p"${rootUserPW}" --execute="DROP DATABASE IF EXISTS ${dbName}; CREATE DATABASE ${dbName}; GRANT ALL ON ${dbName}.* TO ${siteUserName}; flush privileges;"
 }
 
 # It installs the composer under the /usr/local/bin dir.
@@ -88,7 +88,7 @@ function createComposerProject {
 		exit 1
 	fi
 	cd "${SCRIPTS_DIR}/${targetDir}" || exit
-	"${composerApp}" create-project drupal/recommended-project:8.x "${projectName}" --no-interaction --no-progress
+	"${composerApp}" create-project drupal/recommended-project "${projectName}" --no-interaction --no-progress
 }
 
 # It installs the drush command to the previously created composer project.
@@ -97,7 +97,7 @@ function installDrushCommand {
 	local projectName=$2
 	local composerApp=$3
 	echo "Installing drush with composer"
-	composerRequire "${targetDir}" "${projectName}" "drush/drush:^10.3" "${composerApp}"
+	composerRequire "${targetDir}" "${projectName}" "drush/drush" "${composerApp}"
 }
 
 # It runs the drush install command in the given composer project.
@@ -129,7 +129,7 @@ function runCvInstall {
 	echo "Making the directory writable"
 	${sudo} chmod -R +w web/sites/default
 	echo "Installing CiviCRM with cv"
-	cv core:install --cms-base-url="http://localhost/${projectName}/web" --lang="hu_HU" --no-interaction -m siteKey="${SITE_TOKEN}" -m paths.cms.root.path="${targetDir}/${projectName}/web"
+	cv core:install --cms-base-url="http://localhost/" --lang="hu_HU" --no-interaction -m siteKey="${SITE_TOKEN}" -m paths.cms.root.path="${targetDir}"
 	# It seems, that instead of ['cms.root']['path'], it generates ['cms']['root']['path'].
 	sed -i "s|'cms'\]\['root'|'cms.root'|" web/sites/default/civicrm.settings.php
 	# create the config and log directory.
@@ -148,7 +148,7 @@ function runDrushConfigSet {
 	local configValue=$5
 	cd "${targetDir}/${projectName}" || exit
 	echo "Setting the ${configName} ${configKey} to ${configValue}"
-	./vendor/drush/drush/drush config-set "${configName}" "${configKey}" "${configValue}"
+	./vendor/drush/drush/drush config-set --yes "${configName}" "${configKey}" "${configValue}"
 }
 
 # It runs composer require command with the given package.
@@ -163,7 +163,7 @@ function composerRequire {
 	fi
 	cd "${targetDir}/${projectName}" || exit
 	echo "Require ${composerPackage}."
-	"${composerApp}" require --no-progress "${composerPackage}"
+	"${composerApp}" require --no-interaction --no-progress "${composerPackage}"
 }
 # It runs composer require command for a workaround.
 function composerRequireSymfony {
@@ -175,7 +175,7 @@ function composerRequireSymfony {
 		exit 1
 	fi
 	cd "${targetDir}/${projectName}" || exit
-	"${composerApp}" require symfony/finder:"5.2.3 as 4.4.18"
+	"${composerApp}" require --no-interaction symfony/finder:"5.2.3 as 4.4.18"
 }
 function composerRequireWithDependencies {
 	local targetDir=$1
@@ -188,7 +188,7 @@ function composerRequireWithDependencies {
 	fi
 	cd "${targetDir}/${projectName}" || exit
 	echo "Require ${composerPackage}."
-	"${composerApp}" require --update-with-all-dependencies --no-progress "${composerPackage}"
+	"${composerApp}" require --no-interaction --update-with-all-dependencies --no-progress "${composerPackage}"
 }
 # It runs the composer config command in the given composer project with the given parameters.
 function composerConfig {
@@ -314,7 +314,7 @@ APACHE_CONF_DIR=""
 CIVICRM_VERSION=""
 SITE_ADMIN_USER_NAME=""
 SITE_ADMIN_PASSWD=""
-COMPOSER_APP=composer1
+COMPOSER_APP=composer
 SITE_TOKEN=civicrm_base_dev_site
 SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
@@ -768,6 +768,53 @@ case "${ACTION}" in
                 # Create .cv.json configuration file.
                 echo "{\"sites\":{\"${LOCAL_DEPLOY_TARGET}/${PROJECT_NAME}/web/sites/default/civicrm.settings.php\":{\"TEST_DB_DSN\":\"mysql://${DB_ROOT_USER_NAME}:${DB_ROOT_USER_PW}@${DB_HOST}:${DB_PORT}/${DB_NAME}?new_link=true\",\"SITE_TOKEN\":\"${SITE_TOKEN}\", \"ADMIN_EMAIL\": \"admin@example.com\",\"ADMIN_PASS\": \"${SITE_ADMIN_PASSWD}\",\"ADMIN_USER\": \"${SITE_ADMIN_USER_NAME}\",\"CMS_TITLE\": \"Untitled installation\", \"DEMO_EMAIL\": \"admin@example.com\",\"DEMO_PASS\": \"${SITE_ADMIN_PASSWD}\",\"DEMO_USER\": \"${SITE_ADMIN_USER_NAME}\"}}}" | jq . > /home/runner/.cv.json
                 ;;
+	drupal-civicrm-build)
+		if [ "${PROJECT_BASE_PATH}" == "" ] || [ "${PROJECT_NAME}" == "" ]; then
+			echo "You have to set both the project base path (--project-base-path) and the project name (--project-name) flags."
+			exit 1
+		fi
+		if  [ "${DB_NAME}" == "" ]; then
+			echo "You have to set the db name (--db-name) to be able to run the site installation."
+			exit 1
+		fi
+		if [ "${SITE_ADMIN_USER_NAME}" == "" ] || [ "${SITE_ADMIN_PASSWD}" == "" ]; then
+			echo "You have to set both the administrator user name (--site-admin-user-name) and the administrator user password (--site-admin-password) flags."
+			exit 1
+		fi
+		if  [ "${APACHE_CONF_DIR}" == "" ]; then
+			echo "You have to set the apache configuration directory (--apache-conf-dir) flag."
+			exit 1
+		fi
+		if [ "${LOCAL_DEPLOY_TARGET}" == "" ]; then
+			echo "You have to set the target of the local deploy (--local-deploy-target) flag."
+		fi
+		if [ "${SUDO}" == "" ]; then
+			echo "You have to set the sudo (-s or --sudo) to be able to run drupal-civicrm-build process."
+			exit 1
+		fi
+		if [ "${DB_USER_NAME}" == "" ] || [ "${DB_NAME}" == "" ]; then
+			echo "You have to set the db user name and db name (--db-user-name and --db-name) to be able to create mysql database."
+			exit 1
+		fi
+		createDatabaseMysql "${DB_ROOT_USER_NAME}" "${DB_ROOT_USER_PW}" "${DB_USER_NAME}" "${DB_NAME}"
+		createComposerProject "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${COMPOSER_APP}"
+		localDeploy "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${LOCAL_DEPLOY_TARGET}" "${SUDO}"
+		installDrushCommand "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "${COMPOSER_APP}"
+		runDrushInstall "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "${DB_ROOT_USER_NAME}" "${DB_ROOT_USER_PW}" "${DB_NAME}" "${SITE_ADMIN_USER_NAME}" "${SITE_ADMIN_PASSWD}" "${DB_HOST}" "${DB_PORT}"
+		runDrushConfigSet "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "system.site" "name" "${PROJECT_NAME}"
+		runDrushConfigSet "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "system.site" "slogan" "${PROJECT_NAME} - powered by DSG."
+		composerConfig "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "extra.enable-patching" "true" "${COMPOSER_APP}"
+		composerConfig "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "extra.compile-mode" "all" "${COMPOSER_APP}"
+		composerRequire "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "civicrm/civicrm-asset-plugin:~1.1" "${COMPOSER_APP}"
+		composerRequireWithDependencies "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "civicrm/civicrm-core:~5.43" "${COMPOSER_APP}"
+		composerRequireWithDependencies "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "civicrm/civicrm-packages:~5.43" "${COMPOSER_APP}"
+		composerRequireWithDependencies "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "civicrm/civicrm-drupal-8:~5.43" "${COMPOSER_APP}"
+		installCivicrml10n "${SUDO}" "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "5.43.2"
+		installCv "${SUDO}"
+		runCvInstall "${SUDO}" "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}"
+		addToWwwUser "${SUDO}" "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}"
+		apacheConfig "${SUDO}" "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "${APACHE_CONF_DIR}"
+		;;
 	*)
 		echo "Invalid action name: '${ACTION}'"
 		exit 1

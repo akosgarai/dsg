@@ -19,10 +19,10 @@ TEST_DB_PORT=${DB_PORT:-3308}
 TEST_LOCAL_DEPLOY_TARGET=${LOCAL_DEPLOY_TARGET:-"/var/www/html"}
 TEST_COMPOSER_APP=${COMPOSER_APP:-"composer"}
 
-function Test_DrupalBuildOnlyAction {
-    local msg="With only drupal-build action name the script should return error. "
+function Test_DrupalCivicrmBuildOnlyAction {
+    local msg="With only drupal-civicrm-build action name the script should return error. "
     local code=0
-    local actionName=drupal-build
+    local actionName=drupal-civicrm-build
     local result
     result=$("${APP}" "${actionName}")
     if [ ! "${result}" == "You have to set both the project base path (--project-base-path) and the project name (--project-name) flags." ]; then
@@ -34,10 +34,10 @@ function Test_DrupalBuildOnlyAction {
     echo "${msg}"
     return ${code}
 }
-function Test_DrupalBuildActionPath {
-    local msg="With drupal-build action name and --project-base-path flag the script should return error. "
+function Test_DrupalCivicrmBuildActionPath {
+    local msg="With drupal-civicrm-build action name and --project-base-path flag the script should return error. "
     local code=0
-    local actionName=drupal-build
+    local actionName=drupal-civicrm-build
     local result
     result=$("${APP}" "${actionName}" --project-base-path "${TEST_PROJECT_BASE_PATH}")
     if [ ! "${result}" == "You have to set both the project base path (--project-base-path) and the project name (--project-name) flags." ]; then
@@ -49,10 +49,10 @@ function Test_DrupalBuildActionPath {
     echo "${msg}"
     return ${code}
 }
-function Test_DrupalBuildActionName {
-    local msg="With drupal-build action name and --project-name flag the script should return error. "
+function Test_DrupalCivicrmBuildActionName {
+    local msg="With drupal-civicrm-build action name and --project-name flag the script should return error. "
     local code=0
-    local actionName=drupal-build
+    local actionName=drupal-civicrm-build
     local result
     result=$("${APP}" "${actionName}" --project-name "${TEST_SITE_NAME}")
     if [ ! "${result}" == "You have to set both the project base path (--project-base-path) and the project name (--project-name) flags." ]; then
@@ -64,18 +64,18 @@ function Test_DrupalBuildActionName {
     echo "${msg}"
     return ${code}
 }
-function Test_DrupalBuildWithoutSudoFlag {
-    local msg="Without the sudo flag the drupal-build action should return error. "
+function Test_DrupalCivicrmBuildWithoutSudoFlag {
+    local msg="Without the sudo flag the drupal-civicrm-build action should return error. "
     local code=0
-    local actionName=drupal-build
+    local actionName=drupal-civicrm-build
     local result
     result=$("${APP}" "${actionName}" --project-base-path "${TEST_PROJECT_BASE_PATH}" --project-name "${TEST_SITE_NAME}" \
         --db-name "${TEST_DB_NAME}" --db-user-name "${TEST_DB_USER}" --site-admin-user-name "${TEST_SITE_ADMIN_NAME}" \
         --site-admin-password "${TEST_SITE_ADMIN_PW}" --apache-conf-dir "${TEST_APACHE_CONF_DIR}" --db-host "${TEST_DB_HOST}" \
         --db-port "${TEST_DB_PORT}" --root-db-user-pw "${TEST_ROOT_DB_USER_PW}" --local-deploy-target "${TEST_LOCAL_DEPLOY_TARGET}" \
         --composer-app "${TEST_COMPOSER_APP}")
-    if [ ! "${result}" == "You have to set the sudo (-s or --sudo) to be able to run drupal-build process." ]; then
-        msg="${msg}- FAILED"
+    if [ ! "${result}" == "You have to set the sudo (-s or --sudo) to be able to run drupal-civicrm-build process." ]; then
+        msg="${msg}- FAILED - ${result}"
         code=1
     else
         msg="${msg}- OK"
@@ -83,10 +83,10 @@ function Test_DrupalBuildWithoutSudoFlag {
     echo "${msg}"
     return ${code}
 }
-function Test_DrupalBuildActionPathName {
-    local msg="With drupal-build action valid setup, a composer project has to be created."
+function Test_DrupalCivicrmBuildActionPathName {
+    local msg="With drupal-civicrm-build action valid setup, a composer project has to be created."
     local code=0
-    local actionName=drupal-build
+    local actionName=drupal-civicrm-build
     if [ ! -d "${TEST_PROJECT_BASE_PATH}" ]; then
         mkdir -p "${TEST_PROJECT_BASE_PATH}"
     fi
@@ -124,7 +124,18 @@ function Test_DrupalBuildActionPathName {
     else
         msg="${msg}\n\tStatus code not existing path '${url}notvalidpath' (${curlCode}). - OK"
     fi
-    # redirect to civicrm page with the drush otp.
+    # should not be able to reach the crm page without login.
+    curlCode=0
+    curlCode=$(curl -o /dev/null -w "%{http_code}\n" -s -XGET "${url}civicrm")
+    if [ ! "${curlCode}" == "403" ]; then
+        msg="${msg}\n\tStatus code without login '${url}civicrm' (${curlCode}) not 403. - FAILED"
+        code=1
+    else
+        msg="${msg}\n\tStatus code without login '${url}civicrm' (${curlCode}). - OK"
+    fi
+    echo -e "${msg}"
+    # cleanup
+    # redirect to content page with the drush otp.
     local otp
     otp=$("${TEST_LOCAL_DEPLOY_TARGET}/${TEST_SITE_NAME}"/vendor/drush/drush/drush uli --uri="${url}" --uid=1 admin/content --no-browser)
     # the cookies has to be passed to the redirects.
@@ -137,16 +148,26 @@ function Test_DrupalBuildActionPathName {
         msg="${msg}\n\tStatus code with login '${url}admin/content/' (${curlCode}). - OK"
     fi
     echo -e "${msg}"
+    # Has to be able to reach the crm page also.
+    curlCode=0
+    curlCode=$(curl -o /dev/null -w "%{http_code}\n" -s -L -c cookies.txt -b cookies.txt -XGET "${url}civicrm")
+    if [ ! "${curlCode}" == "200" ]; then
+        msg="${msg}\n\tStatus code with login '${url}civicrm' (${curlCode}) not 200. - FAILED"
+        code=1
+    else
+        msg="${msg}\n\tStatus code with login '${url}civicrm' (${curlCode}). - OK"
+    fi
+    echo -e "${msg}"
     return ${code}
 }
 
 # Define the test cases
 TEST_CASES=(
-    Test_DrupalBuildOnlyAction
-    Test_DrupalBuildActionPath
-    Test_DrupalBuildActionName
-    Test_DrupalBuildWithoutSudoFlag
-    Test_DrupalBuildActionPathName
+    Test_DrupalCivicrmBuildOnlyAction
+    Test_DrupalCivicrmBuildActionPath
+    Test_DrupalCivicrmBuildActionName
+    Test_DrupalCivicrmBuildWithoutSudoFlag
+    Test_DrupalCivicrmBuildActionPathName
 )
 
 # Run test cases

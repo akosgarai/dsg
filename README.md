@@ -279,14 +279,16 @@ The next step is the build process, and the `make build` target is given for thi
 
 - create-database-mysql
 - create-composer-project
+- local-deploy
 - install-drush
 - run-drush-install
 - run-drush-config-set
 - run-drush-config-set
-- local-deploy
 - apache-config
 
 After the first installation, where the system deps. are installed, we can skip a couple of steps from the build process. The `make rebuild` target wraps the necessary steps.
+
+Alternative make target for the local installation: `make build-drupal`. It is similar to the build target, but it uses only one script action and all the parameters are passed to this action. It was inspired by the ci-build action.
 
 ### Uninstall - local machine.
 
@@ -294,4 +296,10 @@ Just run the `make cleanup_generated_project` command. It deletes the stuff from
 
 ### Civicrm
 
-That tool installatin seems to be buggy, but the make targets are provided for building the site with that module. The `make build_with_civicrm` and `make rebuild_with_civicrm` targets are for this.
+That tool installation could be executed with the `make build-drupal-civicrm`. It is a similar process as the drupal-build, but includes the necessary setup for the CRM installation also.
+
+## Changes
+
+The v1.0.0 version was implemented to support the test executions for CI.
+
+The v2.0.0 version was implemented to support the local development workflows. The scripts and workflow steps are updated to use the latest ubuntu image, php 7.4. If you need the v1 for your test executions, check out to the release tag in your checkout action.

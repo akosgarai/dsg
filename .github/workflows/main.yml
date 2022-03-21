@@ -7,7 +7,7 @@ on:
 jobs:
   shellcheck:
     name: Shellcheck
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - name: Run ShellCheck
@@ -15,7 +15,7 @@ jobs:
 
   inputhandlertest:
     name: Input handler tests
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     env:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: drupal
@@ -37,8 +37,8 @@ jobs:
     - name: Setup PHP and the extensions also the tools
       uses: shivammathur/setup-php@v2
       with:
-        php-version: '7.3'
-        tools: composer:v1
+        php-version: '7.4'
+        tools: composer:v2
         extensions: cli fpm mysql json opcache mbstring xml gd curl intl
 
     - name: Start mqsql daemon.
@@ -47,7 +47,6 @@ jobs:
 
     - name: Verify mysql.
       run: |
-          sudo apt-get install -y mysql-client
           mysql --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} -u root -p${{ env.MYSQL_ROOT_PASSWORD }} --execute "SHOW DATABASES"
 
     - name: Install CV command
@@ -58,9 +57,7 @@ jobs:
 
     - name: Basic apache module and config
       run: |
-          sudo add-apt-repository ppa:ondrej/php
-          sudo apt-get update
-          sudo apt-get install libapache2-mod-php7.3
+          sudo apt-get install libapache2-mod-php7.4
           sudo a2enmod rewrite
           sudo mv apache2.conf ${{ env.APACHE_DIR }}/apache2.conf
 
@@ -79,5 +76,12 @@ jobs:
         LOCAL_DEPLOY_TARGET: "/var/www/html"
         COMPOSER_APP: composer
       run: |
-          ./tests/test_CIBuild.sh
           ./tests/test_DrupalBuild.sh
+          sudo rm -rf "${{ env.LOCAL_DEPLOY_TARGET }}/${{ env.SITE_NAME }}"
+          mysql --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} -u root -p${{ env.MYSQL_ROOT_PASSWORD }} --execute "DROP DATABASE ${{ env.MYSQL_DATABASE }}"
+          ./tests/test_DrupalCivicrmBuild.sh
+          sudo rm -rf "${{ env.LOCAL_DEPLOY_TARGET }}/${{ env.SITE_NAME }}"
+          mysql --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} -u root -p${{ env.MYSQL_ROOT_PASSWORD }} --execute "DROP DATABASE ${{ env.MYSQL_DATABASE }}"
+          ./tests/test_CIBuild.sh
+          sudo rm -rf "${{ env.LOCAL_DEPLOY_TARGET }}/${{ env.SITE_NAME }}"
+          mysql --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} -u root -p${{ env.MYSQL_ROOT_PASSWORD }} --execute "DROP DATABASE ${{ env.MYSQL_DATABASE }}"
