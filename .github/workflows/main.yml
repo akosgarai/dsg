@@ -81,3 +81,4 @@ jobs:
       run: |
           ./tests/test_CIBuild.sh
           ./tests/test_DrupalBuild.sh
+          ./tests/test_DrupalCivicrmBuild.sh
