@@ -297,3 +297,9 @@ Just run the `make cleanup_generated_project` command. It deletes the stuff from
 ### Civicrm
 
 That tool installation could be executed with the `make build-drupal-civicrm`. It is a similar process as the drupal-build, but includes the necessary setup for the CRM installation also.
+
+## Changes
+
+The v1.0.0 version was implemented to support the test executions for CI.
+
+The v2.0.0 version was implemented to support the local development workflows. The scripts and workflow steps are updated to use the latest ubuntu image, php 7.4. If you need the v1 for your test executions, check out to the release tag in your checkout action.
