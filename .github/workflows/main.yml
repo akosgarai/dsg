@@ -76,6 +76,6 @@ jobs:
         LOCAL_DEPLOY_TARGET: "/var/www/html"
         COMPOSER_APP: composer
       run: |
-          ./tests/test_CIBuild.sh
           ./tests/test_DrupalBuild.sh
           ./tests/test_DrupalCivicrmBuild.sh
+          ./tests/test_CIBuild.sh
