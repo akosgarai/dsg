@@ -1,18 +1,18 @@
-PHP_VER=7.4
-SUDO=sudo
-DB_NAME=dsg
-DB_USER="drupaluser@localhost"
-DB_PW="Drup4l.Us5r"
-SITE_NAME="dsg-site.com"
-SITE_SLOGAN="This site is build with cli tools."
-TARGET_DIR="/var/www/html"
-APACHE_CONF_DIR="/etc/apache2"
-PROJECTS_BASE_PATH=".."
-SITE_ADMIN_NAME="admin"
-SITE_ADMIN_PW="jPoLvGGGV5"
-DB_HOST="localhost"
-DB_PORT=3306
-COMPOSER_APP=composer1
+PHP_VER ?=7.4
+SUDO ?=sudo
+DB_NAME ?="dsg"
+DB_USER ?="drupaluser@localhost"
+DB_PW ?="Drup4l.Us5r"
+SITE_NAME ?="dsg-site.com"
+SITE_SLOGAN ?="This site is build with cli tools."
+TARGET_DIR ?="/var/www/html"
+APACHE_CONF_DIR ?="/etc/apache2"
+PROJECTS_BASE_PATH ?=".."
+SITE_ADMIN_NAME ?="admin"
+SITE_ADMIN_PW ?="jPoLvGGGV5"
+DB_HOST ?="localhost"
+DB_PORT ?=3306
+COMPOSER_APP ?=composer1
 
 # this target installs a new theme to the drupal application (with composer), enables it with drush, and sets it as admin theme.
 install_custom_admin_theme:
