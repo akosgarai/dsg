@@ -30,19 +30,6 @@ environment_dependencies:
 	@./scripts.sh "install-composer" -s
 
 # this is the build process. db init, composer project from scratch, drupal install, apache config.
-drupal_build: cleanup_generated_project
-	@./scripts.sh "drupal-build" -s --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
-		--db-name "${DB_NAME}" \
-		--db-user-name "${DB_USER}" \
-		--site-admin-user-name "${SITE_ADMIN_NAME}" \
-		--site-admin-password "${SITE_ADMIN_PW}" \
-		--apache-conf-dir "${APACHE_CONF_DIR}"  \
-		--db-host "${DB_HOST}" \
-		--db-port "${DB_PORT}" \
-		--root-db-user-pw "${MYSQL_DB_PASS}" \
-		--local-deploy-target "${TARGET_DIR}" \
-		--composer-app "composer"
-# this is the build process. db init, composer project from scratch, drupal install, apache config.
 build:
 	@./scripts.sh "create-database-mysql" --root-db-user-pw "${MYSQL_DB_PASS}" --db-user-name "${DB_USER}" --db-name "${DB_NAME}"
 	@./scripts.sh "create-composer-project" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}"
@@ -70,7 +57,7 @@ build:
 		--apache-conf-dir "${APACHE_CONF_DIR}"
 
 # this is the build process. db init, composer project from scratch, drupal install, civicrm install, apache config.
-build_with_civicrm:
+civi_build:
 	@./scripts.sh "create-database-mysql" --root-db-user-pw "${MYSQL_DB_PASS}" --db-user-name "${DB_USER}" --db-name "${DB_NAME}"
 	@./scripts.sh "create-composer-project" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}"
 	@./scripts.sh "install-drush" --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}"
@@ -123,6 +110,34 @@ rebuild: cleanup_generated_project build
 
 # this target could be used to drop everything and build a brand new application but without civicrm installation.
 rebuild_with_civicrm: cleanup_generated_project build-with-civicrm
+
+# this is the build process. db init, composer project from scratch, drupal install, apache config.
+build-drupal: cleanup_generated_project
+	@./scripts.sh "drupal-build" -s --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
+		--db-name "${DB_NAME}" \
+		--db-user-name "${DB_USER}" \
+		--site-admin-user-name "${SITE_ADMIN_NAME}" \
+		--site-admin-password "${SITE_ADMIN_PW}" \
+		--apache-conf-dir "${APACHE_CONF_DIR}"  \
+		--db-host "${DB_HOST}" \
+		--db-port "${DB_PORT}" \
+		--root-db-user-pw "${MYSQL_DB_PASS}" \
+		--local-deploy-target "${TARGET_DIR}" \
+		--composer-app "composer"
+
+# this is the build process. db init, composer project from scratch, drupal install, CRM install, apache config.
+build-drupal-civicrm:
+	@./scripts.sh "drupal-civicrm-build" -s --project-base-path "${PROJECTS_BASE_PATH}" --project-name "${SITE_NAME}" \
+		--db-name "${DB_NAME}" \
+		--db-user-name "${DB_USER}" \
+		--site-admin-user-name "${SITE_ADMIN_NAME}" \
+		--site-admin-password "${SITE_ADMIN_PW}" \
+		--apache-conf-dir "${APACHE_CONF_DIR}"  \
+		--db-host "${DB_HOST}" \
+		--db-port "${DB_PORT}" \
+		--root-db-user-pw "${MYSQL_DB_PASS}" \
+		--local-deploy-target "${TARGET_DIR}" \
+		--composer-app "composer"
 
 # this target could be used for building an app in ci environment.
 ci_build:
