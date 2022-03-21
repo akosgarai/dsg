@@ -75,7 +75,7 @@ function Test_DrupalCivicrmBuildWithoutSudoFlag {
         --db-port "${TEST_DB_PORT}" --root-db-user-pw "${TEST_ROOT_DB_USER_PW}" --local-deploy-target "${TEST_LOCAL_DEPLOY_TARGET}" \
         --composer-app "${TEST_COMPOSER_APP}")
     if [ ! "${result}" == "You have to set the sudo (-s or --sudo) to be able to run drupal-build process." ]; then
-        msg="${msg}- FAILED"
+        msg="${msg}- FAILED - ${result}"
         code=1
     else
         msg="${msg}- OK"
