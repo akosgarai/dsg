@@ -124,6 +124,14 @@ build-drupal: cleanup_generated_project
 		--root-db-user-pw "${MYSQL_DB_PASS}" \
 		--local-deploy-target "${TARGET_DIR}" \
 		--composer-app "composer"
+	@./scripts.sh "run-drush-config-set" --project-base-path "${TARGET_DIR}" --project-name "${SITE_NAME}" \
+		--drush-config-name "system.site" \
+		--drush-config-key "name" \
+		--drush-config-value "${SITE_NAME}"
+	@./scripts.sh "run-drush-config-set" --project-base-path "${TARGET_DIR}" --project-name "${SITE_NAME}" \
+		--drush-config-name "system.site" \
+		--drush-config-key "slogan" \
+		--drush-config-value '"${SITE_SLOGAN}"'
 
 # this is the build process. db init, composer project from scratch, drupal install, CRM install, apache config.
 build-drupal-civicrm:
@@ -138,6 +146,14 @@ build-drupal-civicrm:
 		--root-db-user-pw "${MYSQL_DB_PASS}" \
 		--local-deploy-target "${TARGET_DIR}" \
 		--composer-app "composer"
+	@./scripts.sh "run-drush-config-set" --project-base-path "${TARGET_DIR}" --project-name "${SITE_NAME}" \
+		--drush-config-name "system.site" \
+		--drush-config-key "name" \
+		--drush-config-value "${SITE_NAME}"
+	@./scripts.sh "run-drush-config-set" --project-base-path "${TARGET_DIR}" --project-name "${SITE_NAME}" \
+		--drush-config-name "system.site" \
+		--drush-config-key "slogan" \
+		--drush-config-value '"${SITE_SLOGAN}"'
 
 # this target could be used for building an app in ci environment.
 ci_build:
