@@ -7,7 +7,7 @@ on:
 jobs:
   shellcheck:
     name: Shellcheck
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - name: Run ShellCheck
@@ -15,7 +15,7 @@ jobs:
 
   inputhandlertest:
     name: Input handler tests
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     env:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: drupal
@@ -37,8 +37,8 @@ jobs:
     - name: Setup PHP and the extensions also the tools
       uses: shivammathur/setup-php@v2
       with:
-        php-version: '7.3'
-        tools: composer:v1
+        php-version: '7.4'
+        tools: composer:v2
         extensions: cli fpm mysql json opcache mbstring xml gd curl intl
 
     - name: Start mqsql daemon.
@@ -58,9 +58,6 @@ jobs:
 
     - name: Basic apache module and config
       run: |
-          sudo add-apt-repository ppa:ondrej/php
-          sudo apt-get update
-          sudo apt-get install libapache2-mod-php7.3
           sudo a2enmod rewrite
           sudo mv apache2.conf ${{ env.APACHE_DIR }}/apache2.conf
 
