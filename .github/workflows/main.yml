@@ -78,7 +78,10 @@ jobs:
       run: |
           ./tests/test_DrupalBuild.sh
           sudo rm -rf "${{ env.LOCAL_DEPLOY_TARGET }}/${{ env.SITE_NAME }}"
+          mysql --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} -u root -p${{ env.MYSQL_ROOT_PASSWORD }} --execute "DROP DATABASE ${{ env.MYSQL_DATABASE }}"
           ./tests/test_DrupalCivicrmBuild.sh
           sudo rm -rf "${{ env.LOCAL_DEPLOY_TARGET }}/${{ env.SITE_NAME }}"
+          mysql --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} -u root -p${{ env.MYSQL_ROOT_PASSWORD }} --execute "DROP DATABASE ${{ env.MYSQL_DATABASE }}"
           ./tests/test_CIBuild.sh
           sudo rm -rf "${{ env.LOCAL_DEPLOY_TARGET }}/${{ env.SITE_NAME }}"
+          mysql --host 127.0.0.1 --port ${{ job.services.mysql.ports['3306'] }} -u root -p${{ env.MYSQL_ROOT_PASSWORD }} --execute "DROP DATABASE ${{ env.MYSQL_DATABASE }}"
