@@ -57,6 +57,7 @@ jobs:
 
     - name: Basic apache module and config
       run: |
+          sudo apt-get install libapache2-mod-php7.4
           sudo a2enmod rewrite
           sudo mv apache2.conf ${{ env.APACHE_DIR }}/apache2.conf
 
