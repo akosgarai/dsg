@@ -768,6 +768,59 @@ case "${ACTION}" in
                 # Create .cv.json configuration file.
                 echo "{\"sites\":{\"${LOCAL_DEPLOY_TARGET}/${PROJECT_NAME}/web/sites/default/civicrm.settings.php\":{\"TEST_DB_DSN\":\"mysql://${DB_ROOT_USER_NAME}:${DB_ROOT_USER_PW}@${DB_HOST}:${DB_PORT}/${DB_NAME}?new_link=true\",\"SITE_TOKEN\":\"${SITE_TOKEN}\", \"ADMIN_EMAIL\": \"admin@example.com\",\"ADMIN_PASS\": \"${SITE_ADMIN_PASSWD}\",\"ADMIN_USER\": \"${SITE_ADMIN_USER_NAME}\",\"CMS_TITLE\": \"Untitled installation\", \"DEMO_EMAIL\": \"admin@example.com\",\"DEMO_PASS\": \"${SITE_ADMIN_PASSWD}\",\"DEMO_USER\": \"${SITE_ADMIN_USER_NAME}\"}}}" | jq . > /home/runner/.cv.json
                 ;;
+	ci-build-simple)
+		if [ "${PROJECT_BASE_PATH}" == "" ] || [ "${PROJECT_NAME}" == "" ]; then
+			echo "You have to set both the project base path (--project-base-path) and the project name (--project-name) flags."
+			exit 1
+		fi
+		if  [ "${DB_NAME}" == "" ]; then
+			echo "You have to set the db name (--db-name) to be able to run the site installation."
+			exit 1
+		fi
+		if [ "${SITE_ADMIN_USER_NAME}" == "" ] || [ "${SITE_ADMIN_PASSWD}" == "" ]; then
+			echo "You have to set both the administrator user name (--site-admin-user-name) and the administrator user password (--site-admin-password) flags."
+			exit 1
+		fi
+		if  [ "${APACHE_CONF_DIR}" == "" ]; then
+			echo "You have to set the apache configuration directory (--apache-conf-dir) flag."
+			exit 1
+		fi
+		if [ "${LOCAL_DEPLOY_TARGET}" == "" ]; then
+			echo "You have to set the target of the local deploy (--local-deploy-target) flag."
+		fi
+		if [ "${SUDO}" == "" ]; then
+			echo "You have to set the sudo (-s or --sudo) to be able to run ci-build process."
+			exit 1
+		fi
+		# Checkout Civi-zero
+		git clone https://github.com/reflexive-communications/civicrm-zero.git "${PROJECT_BASE_PATH}"
+		# createComposerProject "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${COMPOSER_APP}"
+		localDeploy "${PROJECT_BASE_PATH}" "${PROJECT_NAME}" "${LOCAL_DEPLOY_TARGET}" "${SUDO}"
+		# Install
+		composer install --working-dir="${LOCAL_DEPLOY_TARGET}"
+		# installDrushCommand "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "${COMPOSER_APP}"
+		runDrushInstall "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "${DB_ROOT_USER_NAME}" "${DB_ROOT_USER_PW}" "${DB_NAME}" "${SITE_ADMIN_USER_NAME}" "${SITE_ADMIN_PASSWD}" "${DB_HOST}" "${DB_PORT}"
+		# composerConfig "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "extra.enable-patching" "true" "${COMPOSER_APP}"
+		# The following exception was visible in the github action console.
+		# [Exception]
+		# Cannot prompt for compilation preferences. Please update COMPOSER_COMPILE,
+		# extra.compile-mode, or extra.compile-whitelist.
+		# composerConfig "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "extra.compile-mode" "all" "${COMPOSER_APP}"
+		# composerRequire "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "civicrm/civicrm-asset-plugin:~1.1" "${COMPOSER_APP}"
+                # due to some symfony finder version issue, the following workaround is applied.
+                # https://lab.civicrm.org/dev/core/-/issues/2177
+		# composerRequireSymfony "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "${COMPOSER_APP}"
+		chmod -R u+w "${LOCAL_DEPLOY_TARGET}/${PROJECT_NAME}/web/sites/default"
+		# composerRequireWithDependencies "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "civicrm/civicrm-core:~5.43.2" "${COMPOSER_APP}"
+		# composerRequire "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "civicrm/civicrm-packages:~5.43.2" "${COMPOSER_APP}"
+		# composerRequire "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "civicrm/civicrm-drupal-8:~5.43.2" "${COMPOSER_APP}"
+		installCivicrml10n "${SUDO}" "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "5.43.2"
+		runCvInstall "${SUDO}" "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}"
+		apacheConfig "${SUDO}" "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}" "${APACHE_CONF_DIR}"
+		addToWwwUser "${SUDO}" "${LOCAL_DEPLOY_TARGET}" "${PROJECT_NAME}"
+                # Create .cv.json configuration file.
+                echo "{\"sites\":{\"${LOCAL_DEPLOY_TARGET}/${PROJECT_NAME}/web/sites/default/civicrm.settings.php\":{\"TEST_DB_DSN\":\"mysql://${DB_ROOT_USER_NAME}:${DB_ROOT_USER_PW}@${DB_HOST}:${DB_PORT}/${DB_NAME}?new_link=true\",\"SITE_TOKEN\":\"${SITE_TOKEN}\", \"ADMIN_EMAIL\": \"admin@example.com\",\"ADMIN_PASS\": \"${SITE_ADMIN_PASSWD}\",\"ADMIN_USER\": \"${SITE_ADMIN_USER_NAME}\",\"CMS_TITLE\": \"Untitled installation\", \"DEMO_EMAIL\": \"admin@example.com\",\"DEMO_PASS\": \"${SITE_ADMIN_PASSWD}\",\"DEMO_USER\": \"${SITE_ADMIN_USER_NAME}\"}}}" | jq . > /home/runner/.cv.json
+                ;;
 	drupal-civicrm-build)
 		if [ "${PROJECT_BASE_PATH}" == "" ] || [ "${PROJECT_NAME}" == "" ]; then
 			echo "You have to set both the project base path (--project-base-path) and the project name (--project-name) flags."
