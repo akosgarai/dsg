@@ -54,7 +54,7 @@ function createUserMysql {
 	mysql -u "${rootUserName}" "-p${rootUserPW}" --execute="CREATE USER IF NOT EXISTS ${newUserName} IDENTIFIED BY '${newUserPW}';"
 }
 
-# It drops the old database, creates a new one, sets the 
+# It drops the old database, creates a new one, sets the
 # grants for the db user, flushes the privileges.
 function createDatabaseMysql {
 	local rootUserName=$1
@@ -69,7 +69,7 @@ function createDatabaseMysql {
 function installComposer {
 	local sudo=$1
 	# download the installer
-	curl -sS https://getcomposer.org/installer -o composer-setup.php 
+	curl -sS https://getcomposer.org/installer -o composer-setup.php
 	# run installer
 	${sudo} php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 	# delete installer
@@ -276,11 +276,11 @@ function removeProject {
 	${sudo} rm -rf "${targetDir}/${projectName}"
 	# delete apache config file
 	local serviceRestart=""
-	if [ -e "${apachedir}/sites-enabled/${projectName}.conf" ]; then 
+	if [ -e "${apachedir}/sites-enabled/${projectName}.conf" ]; then
 		serviceRestart="1"
 		${sudo} rm "${apachedir}/sites-enabled/${projectName}.conf"
 	fi
-	if [ -e "${apachedir}/sites-available/${projectName}.conf" ]; then 
+	if [ -e "${apachedir}/sites-available/${projectName}.conf" ]; then
 		serviceRestart="1"
 		${sudo} rm "${apachedir}/sites-available/${projectName}.conf"
 	fi
@@ -507,7 +507,7 @@ case "${ACTION}" in
 			echo "You have to set the sudo (-s or --sudo) to be able to secure install mysql."
 			exit 1
 		fi
-		secureInstallMysql ${SUDO} 
+		secureInstallMysql ${SUDO}
 		;;
 	create-user-mysql)
 		if [ "${DB_USER_NAME}" == "" ] || [ "${DB_USER_PW}" == "" ]; then
